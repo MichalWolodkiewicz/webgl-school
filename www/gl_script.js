@@ -1,10 +1,58 @@
 var GL;
 var logBox;
-var point_scale = 1;
-var add_to_point = -0.05;
 var triangle_buffer;
 var faces_buffer;
-var VIEWMATRIX;
+var move_cube = 0.0;
+
+const triangle_vertex = [
+    -1,-1,-1,     1,1,0,
+    1,-1,-1,     1,1,0,
+    1, 1,-1,     1,1,0,
+    -1, 1,-1,     1,1,0,
+
+    -1,-1, 1,     0,0,1,
+    1,-1, 1,     0,0,1,
+    1, 1, 1,     0,0,1,
+    -1, 1, 1,     0,0,1,
+
+    -1,-1,-1,     0,1,1,
+    -1, 1,-1,     0,1,1,
+    -1, 1, 1,     0,1,1,
+    -1,-1, 1,     0,1,1,
+
+    1,-1,-1,     1,0,0,
+    1, 1,-1,     1,0,0,
+    1, 1, 1,     1,0,0,
+    1,-1, 1,     1,0,0,
+
+    -1,-1,-1,     1,0,1,
+    -1,-1, 1,     1,0,1,
+    1,-1, 1,     1,0,1,
+    1,-1,-1,     1,0,1,
+
+    -1, 1,-1,     0,1,0,
+    -1, 1, 1,     0,1,0,
+    1, 1, 1,     0,1,0,
+    1, 1,-1,     0,1,0];
+
+var triangle_faces = [
+    0,1,2,
+    0,2,3,
+
+    4,5,6,
+    4,6,7,
+
+    8,9,10,
+    8,10,11,
+
+    12,13,14,
+    12,14,15,
+
+    16,17,18,
+    16,18,19,
+
+    20,21,22,
+    20,22,23];
 
 function logError(message) {
     var logRow = '<p style="color: #ef1214;">' + message + '</p>';
@@ -52,7 +100,7 @@ function initWebGL() {
     bindTriangleBuffers();
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX = LIBS.get_I4();
-    VIEWMATRIX = LIBS.get_I4();
+    var VIEWMATRIX = LIBS.get_I4();
     LIBS.translateZ(VIEWMATRIX, -5);
     GL.clearColor(0.0, 0.0, 0.0, 0.0);
     GL.enable(GL.DEPTH_TEST);
@@ -72,7 +120,7 @@ function initWebGL() {
         GL.vertexAttribPointer(_position, 3, GL.FLOAT, false, 4 * (3 + 3), 0);
         GL.vertexAttribPointer(_color, 3, GL.FLOAT, false, 4 * (3 + 3), 3 * 4);
         GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, faces_buffer);
-        GL.drawElements(GL.TRIANGLES, 3, GL.UNSIGNED_SHORT, 0);
+        GL.drawElements(GL.TRIANGLES, 36, GL.UNSIGNED_SHORT, 0);
         GL.flush();
         window.requestAnimationFrame(animate);
     };
@@ -112,17 +160,8 @@ function createProgram(v_shader, f_shader) {
 }
 
 function bindTriangleBuffers() {
-    var triangle_vertex = [
-        -1, -1, 0,
-        0, 0, 1,
-        1, -1, 0,
-        1, 1, 0,
-        1, 1, 0,
-        1, 0, 0];
-
     GL.bindBuffer(GL.ARRAY_BUFFER, triangle_buffer);
     GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(triangle_vertex), GL.STATIC_DRAW);
-    var triangle_faces = [0, 1, 2];
     GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, faces_buffer);
     GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangle_faces), GL.STATIC_DRAW);
 }
@@ -138,3 +177,4 @@ var get_shader = function (source, type) {
     logNormal(getShaderNameByType(type) + 'compiled');
     return shader;
 }
+
