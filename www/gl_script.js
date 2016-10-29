@@ -2,57 +2,52 @@ var GL;
 var logBox;
 var triangle_buffer;
 var faces_buffer;
-var move_cube = 0.0;
 
-const triangle_vertex = [
-    -1,-1,-1,     1,1,0,
-    1,-1,-1,     1,1,0,
-    1, 1,-1,     1,1,0,
-    -1, 1,-1,     1,1,0,
+function addColor(colors, circleVertexes) {
+    for (var c = 0; c < colors.length; ++c) {
+        circleVertexes.push(colors[c]);
+    }
+}
 
-    -1,-1, 1,     0,0,1,
-    1,-1, 1,     0,0,1,
-    1, 1, 1,     0,0,1,
-    -1, 1, 1,     0,0,1,
+var colorGenerator = {
+    colors: [[0, 0, 0], [1, 1, 1]],
+    actualColorIndex: 0,
+    generate: function () {
+        if (++this.actualColorIndex == this.colors.length) {
+            this.actualColorIndex = 0;
+        }
+        return this.colors[this.actualColorIndex];
+    }
+};
 
-    -1,-1,-1,     0,1,1,
-    -1, 1,-1,     0,1,1,
-    -1, 1, 1,     0,1,1,
-    -1,-1, 1,     0,1,1,
+function calculateCircleVertexes(angleStep) {
+    var circleVertexes = [0, 0, 0, 1, 0, 0];
+    var radiansConverter = 180 / Math.PI;
+    for (var i = 0; i <= 360; i += angleStep) {
+        console.log([i, Math.cos(i/180*Math.PI), Math.sin(i/180*Math.PI)]);
+        circleVertexes.push(Math.cos(i/180*Math.PI));
+        circleVertexes.push(Math.sin(i/180*Math.PI));
+        circleVertexes.push(0);
+        addColor(colorGenerator.generate(), circleVertexes);
+    }
+    return circleVertexes;
+}
 
-    1,-1,-1,     1,0,0,
-    1, 1,-1,     1,0,0,
-    1, 1, 1,     1,0,0,
-    1,-1, 1,     1,0,0,
+function calculateCircleFaces() {
+    var circleFaces = [];
+    for (var i = 6; i < circle_vertex.length-6; i += 6) {
+        circleFaces.push(0);
+        circleFaces.push(i / 6);
+        circleFaces.push(i / 6 + 1);
+    }
+    return circleFaces;
+}
 
-    -1,-1,-1,     1,0,1,
-    -1,-1, 1,     1,0,1,
-    1,-1, 1,     1,0,1,
-    1,-1,-1,     1,0,1,
+const circle_vertex = calculateCircleVertexes(10);
 
-    -1, 1,-1,     0,1,0,
-    -1, 1, 1,     0,1,0,
-    1, 1, 1,     0,1,0,
-    1, 1,-1,     0,1,0];
+var triangle_faces = calculateCircleFaces();
 
-var triangle_faces = [
-    0,1,2,
-    0,2,3,
-
-    4,5,6,
-    4,6,7,
-
-    8,9,10,
-    8,10,11,
-
-    12,13,14,
-    12,14,15,
-
-    16,17,18,
-    16,18,19,
-
-    20,21,22,
-    20,22,23];
+var vertex_number = triangle_faces.length;
 
 function logError(message) {
     var logRow = '<p style="color: #ef1214;">' + message + '</p>';
@@ -109,7 +104,7 @@ function initWebGL() {
     var time_old = 0;
     var animate = function (time) {
         var dAngle = 0.005 * (time - time_old);
-        LIBS.rotateX(MOVEMATRIX, dAngle);
+        LIBS.rotateY(MOVEMATRIX, dAngle);
         time_old = time;
         GL.viewport(0.0, 0.0, canvas.width, canvas.height);
         GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
@@ -120,7 +115,7 @@ function initWebGL() {
         GL.vertexAttribPointer(_position, 3, GL.FLOAT, false, 4 * (3 + 3), 0);
         GL.vertexAttribPointer(_color, 3, GL.FLOAT, false, 4 * (3 + 3), 3 * 4);
         GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, faces_buffer);
-        GL.drawElements(GL.TRIANGLES, 36, GL.UNSIGNED_SHORT, 0);
+        GL.drawElements(GL.TRIANGLES, vertex_number, GL.UNSIGNED_SHORT, 0);
         GL.flush();
         window.requestAnimationFrame(animate);
     };
@@ -161,7 +156,7 @@ function createProgram(v_shader, f_shader) {
 
 function bindTriangleBuffers() {
     GL.bindBuffer(GL.ARRAY_BUFFER, triangle_buffer);
-    GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(triangle_vertex), GL.STATIC_DRAW);
+    GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(circle_vertex), GL.STATIC_DRAW);
     GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, faces_buffer);
     GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangle_faces), GL.STATIC_DRAW);
 }
