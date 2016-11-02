@@ -1,10 +1,8 @@
 var GL;
 var logBox;
-var triangle_buffer;
-var faces_buffer;
+var circles;
 var canvas;
-var theta = 0,
-    phi = 0;
+var theta = 0;
 
 function addColor(colors, circleVertexes) {
     for (var c = 0; c < colors.length; ++c) {
@@ -13,7 +11,7 @@ function addColor(colors, circleVertexes) {
 }
 
 var colorGenerator = {
-    colors: [[0, 0, 0], [1, 1, 1]],
+    colors: [[0, 0, 0], [1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
     actualColorIndex: 0,
     generate: function () {
         if (++this.actualColorIndex == this.colors.length) {
@@ -23,33 +21,51 @@ var colorGenerator = {
     }
 };
 
-function calculateCircleVertexes(angleStep) {
-    var circleVertexes = [0, 0, 0, 1, 0, 0];
+function createCircles(dimension, angleStep) {
+    var circles = [];
+    var partSize = 2 / dimension;
+    for (var i = -1 + partSize / 2; i < 1; i += partSize) {
+        for (var j = 1 - partSize / 2; j > -1; j -= partSize) {
+            var circleObject = {};
+            circleObject.vertexes = getCircleVertexes(i, j, partSize / 2, angleStep);
+            circleObject.faces = getCircleFaces(circleObject.vertexes);
+            circleObject.vertex_buffer = GL.createBuffer();
+            circleObject.faces_buffer = GL.createBuffer();
+            circleObject.size = partSize;
+            GL.bindBuffer(GL.ARRAY_BUFFER, circleObject.vertex_buffer);
+            GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(circleObject.vertexes), GL.STATIC_DRAW);
+            GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, circleObject.faces_buffer);
+            GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, new Uint16Array(circleObject.faces), GL.STATIC_DRAW);
+            circles.push(circleObject);
+        }
+    }
+    return circles;
+}
+
+function getCircleFaces(vertexes) {
+    var faces = [0];
+    for (var i = 6; i < vertexes.length; i += 6) {
+        faces.push(i / 6);
+    }
+    return faces;
+}
+
+function getCircleVertexes(cx, cy, radius, angleStep) {
+    var vertexes = [];
+    vertexes.push(cx);
+    vertexes.push(cy);
+    vertexes.push(0);
+    vertexes.push(1);
+    vertexes.push(0);
+    vertexes.push(0);
     for (var i = 0; i <= 360; i += angleStep) {
-        console.log([i, Math.cos(i / 180 * Math.PI), Math.sin(i / 180 * Math.PI)]);
-        circleVertexes.push(Math.cos(i / 180 * Math.PI));
-        circleVertexes.push(Math.sin(i / 180 * Math.PI));
-        circleVertexes.push(0);
-        addColor(colorGenerator.generate(), circleVertexes);
+        vertexes.push(cx + (radius * Math.cos(i / 180 * Math.PI)));
+        vertexes.push(cy + (radius * Math.sin(i / 180 * Math.PI)));
+        vertexes.push(0);
+        addColor(colorGenerator.generate(), vertexes);
     }
-    return circleVertexes;
+    return vertexes;
 }
-
-function calculateCircleFaces() {
-    var circleFaces = [];
-    for (var i = 6; i < circle_vertex.length - 6; i += 6) {
-        circleFaces.push(0);
-        circleFaces.push(i / 6);
-        circleFaces.push(i / 6 + 1);
-    }
-    return circleFaces;
-}
-
-const circle_vertex = calculateCircleVertexes(10);
-
-var triangle_faces = calculateCircleFaces();
-
-var vertex_number = triangle_faces.length;
 
 function logError(message) {
     var logRow = '<p style="color: #ef1214;">' + message + '</p>';
@@ -85,47 +101,42 @@ function initWebGL() {
     var vertex_shader = get_shader(vertex_shader_src, GL.VERTEX_SHADER);
     var fragment_shader = get_shader(fragment_shader_src, GL.FRAGMENT_SHADER);
     var program = createProgram(vertex_shader, fragment_shader);
-    var _Pmatrix = GL.getUniformLocation(program, "Pmatrix");
     var _MmatrixY = GL.getUniformLocation(program, "MmatrixY");
-    var _MmatrixX = GL.getUniformLocation(program, "MmatrixX");
     var _Vmatrix = GL.getUniformLocation(program, "Vmatrix");
+    var _Pmatrix = GL.getUniformLocation(program, "Pmatrix");
     var _position = GL.getAttribLocation(program, 'position');
     var _color = GL.getAttribLocation(program, 'color');
-    GL.enableVertexAttribArray(_position);
-    GL.enableVertexAttribArray(_color);
     GL.useProgram(program);
-    triangle_buffer = GL.createBuffer();
-    faces_buffer = GL.createBuffer();
-    bindTriangleBuffers();
+    circles = createCircles(4, 10);
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX_Y = LIBS.get_I4();
-    var MOVEMATRIX_X = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
     LIBS.translateZ(VIEWMATRIX, -5);
+    GL.uniformMatrix4fv(_Pmatrix, false, PROJMATRIX);
+    GL.uniformMatrix4fv(_Vmatrix, false, VIEWMATRIX);
     GL.clearColor(0.0, 0.0, 0.0, 0.0);
     GL.enable(GL.DEPTH_TEST);
     GL.depthFunc(GL.LEQUAL);
     GL.clearDepth(1.0);
-    GL.uniformMatrix4fv(_Pmatrix, false, PROJMATRIX);
+    GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
-    GL.vertexAttribPointer(_position, 3, GL.FLOAT, false, 4 * (3 + 3), 0);
-    GL.vertexAttribPointer(_color, 3, GL.FLOAT, false, 4 * (3 + 3), 3 * 4);
-    GL.uniformMatrix4fv(_Vmatrix, false, VIEWMATRIX);
     var animate = function () {
         if (!drag) {
             dX *= amortization;
-            dY *= amortization;
             theta += dX;
-            //phi += dY;
         }
         LIBS.set_I4(MOVEMATRIX_Y);
-        LIBS.set_I4(MOVEMATRIX_X);
         LIBS.rotateY(MOVEMATRIX_Y, theta);
-        LIBS.rotateX(MOVEMATRIX_X, phi);
-        GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
-        GL.uniformMatrix4fv(_MmatrixY, false, MOVEMATRIX_Y);
-        GL.uniformMatrix4fv(_MmatrixX, false, MOVEMATRIX_X);
-        GL.drawElements(GL.TRIANGLES, vertex_number, GL.UNSIGNED_SHORT, 0);
+        for (var i = 0; i < circles.length; ++i) {
+            GL.bindBuffer(GL.ARRAY_BUFFER, circles[i].vertex_buffer);
+            GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, circles[i].faces_buffer);
+            GL.enableVertexAttribArray(_position);
+            GL.enableVertexAttribArray(_color);
+            GL.vertexAttribPointer(_position, 3, GL.FLOAT, false, 4 * (3 + 3), 0);
+            GL.vertexAttribPointer(_color, 3, GL.FLOAT, false, 4 * (3 + 3), 3 * 4);
+            GL.uniformMatrix4fv(_MmatrixY, false, MOVEMATRIX_Y);
+            GL.drawElements(GL.TRIANGLE_FAN, circles[i].faces.length, GL.UNSIGNED_SHORT, 0);
+        }
         GL.flush();
         window.requestAnimationFrame(animate);
     };
@@ -140,9 +151,8 @@ var vertex_shader_src = "\n\
     uniform mat4 Vmatrix;\n\
     varying vec3 vColor;\n\
     uniform mat4 MmatrixY;\n\
-    uniform mat4 MmatrixX;\n\
     void main(void) {\
-        gl_Position = Pmatrix*Vmatrix*MmatrixY*MmatrixX*vec4(position, 1.);\
+        gl_Position = Pmatrix*Vmatrix*MmatrixY*vec4(position, 1.);\
         vColor = color;\
     }";
 
@@ -165,13 +175,6 @@ function createProgram(v_shader, f_shader) {
     return program;
 }
 
-function bindTriangleBuffers() {
-    GL.bindBuffer(GL.ARRAY_BUFFER, triangle_buffer);
-    GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(circle_vertex), GL.STATIC_DRAW);
-    GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, faces_buffer);
-    GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangle_faces), GL.STATIC_DRAW);
-}
-
 var get_shader = function (source, type) {
     var shader = GL.createShader(type);
     GL.shaderSource(shader, source);
@@ -188,11 +191,11 @@ var get_shader = function (source, type) {
 var drag = false;
 var old_x, old_y;
 var amortization = 0.95;
-var dX = 0.0, dY = 0.0;
+var dX = 0.0;
 
 var mouseDown = function (e) {
     drag = true;
-    old_x = e.pageX, old_y = e.pageY;
+    old_x = e.pageX;
     e.preventDefault();
     return false;
 };
@@ -204,11 +207,8 @@ var mouseUp = function (e) {
 var mouseMove = function (e) {
     if (!drag) return false;
     dX = (e.pageX - old_x) * 2 * Math.PI / canvas.width;
-    dY = (e.pageY - old_y) * 2 * Math.PI / canvas.height;
     theta += dX;
-    //phi+=dY;
     old_x = e.pageX;
-    old_y = e.pageY;
     e.preventDefault();
 };
 
