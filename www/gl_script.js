@@ -11,7 +11,7 @@ function addColor(colors, circleVertexes) {
 }
 
 var colorGenerator = {
-    colors: [[0, 0, 0], [1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
+    colors: [[0, 0, 0], [255, 255, 255]],
     actualColorIndex: 0,
     generate: function () {
         if (++this.actualColorIndex == this.colors.length) {
@@ -29,23 +29,35 @@ function createCircles(dimension, angleStep) {
             var circleObject = {};
             circleObject.vertexes = getCircleVertexes(i, j, partSize / 2, angleStep);
             circleObject.faces = getCircleFaces(circleObject.vertexes);
+            circleObject.colors = getVertexesColors(circleObject.vertexes.length);
             circleObject.vertex_buffer = GL.createBuffer();
             circleObject.faces_buffer = GL.createBuffer();
+            circleObject.colors_buffer = GL.createBuffer();
             circleObject.size = partSize;
             GL.bindBuffer(GL.ARRAY_BUFFER, circleObject.vertex_buffer);
             GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(circleObject.vertexes), GL.STATIC_DRAW);
             GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, circleObject.faces_buffer);
             GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, new Uint16Array(circleObject.faces), GL.STATIC_DRAW);
+            GL.bindBuffer(GL.ARRAY_BUFFER, circleObject.colors_buffer);
+            GL.bufferData(GL.ARRAY_BUFFER, new Uint8Array(circleObject.colors), GL.STATIC_DRAW);
             circles.push(circleObject);
         }
     }
     return circles;
 }
 
+function getVertexesColors(numberOfVertexes) {
+    var c = [];
+    for (var i = 0; i < numberOfVertexes; i += 3) {
+        addColor(colorGenerator.generate(), c);
+    }
+    return c;
+}
+
 function getCircleFaces(vertexes) {
     var faces = [0];
-    for (var i = 6; i < vertexes.length; i += 6) {
-        faces.push(i / 6);
+    for (var i = 3; i < vertexes.length; i += 3) {
+        faces.push(i / 3);
     }
     return faces;
 }
@@ -55,14 +67,10 @@ function getCircleVertexes(cx, cy, radius, angleStep) {
     vertexes.push(cx);
     vertexes.push(cy);
     vertexes.push(0);
-    vertexes.push(1);
-    vertexes.push(0);
-    vertexes.push(0);
     for (var i = 0; i <= 360; i += angleStep) {
         vertexes.push(cx + (radius * Math.cos(i / 180 * Math.PI)));
         vertexes.push(cy + (radius * Math.sin(i / 180 * Math.PI)));
         vertexes.push(0);
-        addColor(colorGenerator.generate(), vertexes);
     }
     return vertexes;
 }
@@ -107,14 +115,14 @@ function initWebGL() {
     var _position = GL.getAttribLocation(program, 'position');
     var _color = GL.getAttribLocation(program, 'color');
     GL.useProgram(program);
-    circles = createCircles(4, 10);
+    circles = createCircles(2, 10);
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX_Y = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
-    LIBS.translateZ(VIEWMATRIX, -5);
+    LIBS.translateZ(VIEWMATRIX, -3);
     GL.uniformMatrix4fv(_Pmatrix, false, PROJMATRIX);
     GL.uniformMatrix4fv(_Vmatrix, false, VIEWMATRIX);
-    GL.clearColor(0.0, 0.0, 0.0, 0.0);
+    GL.clearColor(1.0, 0.0, 0.0, 0.0);
     GL.enable(GL.DEPTH_TEST);
     GL.depthFunc(GL.LEQUAL);
     GL.clearDepth(1.0);
@@ -128,12 +136,16 @@ function initWebGL() {
         LIBS.set_I4(MOVEMATRIX_Y);
         LIBS.rotateY(MOVEMATRIX_Y, theta);
         for (var i = 0; i < circles.length; ++i) {
+
             GL.bindBuffer(GL.ARRAY_BUFFER, circles[i].vertex_buffer);
             GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, circles[i].faces_buffer);
             GL.enableVertexAttribArray(_position);
+            GL.vertexAttribPointer(_position, 3, GL.FLOAT, false, 0, 0);
+
+            GL.bindBuffer(GL.ARRAY_BUFFER, circles[i].colors_buffer);
             GL.enableVertexAttribArray(_color);
-            GL.vertexAttribPointer(_position, 3, GL.FLOAT, false, 4 * (3 + 3), 0);
-            GL.vertexAttribPointer(_color, 3, GL.FLOAT, false, 4 * (3 + 3), 3 * 4);
+            GL.vertexAttribPointer(_color, 3, GL.UNSIGNED_BYTE, true, 0, 0);
+
             GL.uniformMatrix4fv(_MmatrixY, false, MOVEMATRIX_Y);
             GL.drawElements(GL.TRIANGLE_FAN, circles[i].faces.length, GL.UNSIGNED_SHORT, 0);
         }
