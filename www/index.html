@@ -4,11 +4,31 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <script type="text/javascript" src="libs.js"></script>
+    <script type="text/javascript" src="glUtils.js"></script>
     <script type="text/javascript" src="gl_script.js"></script>
 </head>
 <body onload="initWebGL(); initLogger();" style="text-align: center;">
 <canvas width="600px" height="600px" id="glCanvas"></canvas>
 <div id="log-box" style="width:500px; height:200px;position: static; bottom: 0px; left:0px;"></div>
-<img />
+<script id="shader-vs" type="x-shader/x-fragment">
+    attribute vec3 position;
+    attribute vec2 a_tex_coords;
+    varying vec2 tex_coords;
+    uniform mat4 Pmatrix;
+    uniform mat4 Vmatrix;
+    uniform mat4 MmatrixY;
+    void main(void) {
+        gl_Position = Pmatrix*Vmatrix*MmatrixY*vec4(position, 1.);
+        tex_coords = a_tex_coords;
+    }
+</script>
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+    varying vec2 tex_coords;
+    uniform sampler2D u_image;
+    void main(void) {
+        gl_FragColor = texture2D(u_image, tex_coords);
+    }
+</script>
 </body>
 </html>

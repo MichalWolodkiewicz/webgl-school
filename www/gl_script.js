@@ -22,7 +22,6 @@ function createSquares(dimension) {
     for (var i = -1 + partSize / 2; i < 1; i += (partSize+offset)) {
         for (var j = 1 - partSize / 2; j > -1; j -= (partSize+offset)) {
             var squareObject = {};
-            console.log(i+"."+j);
             squareObject.vertexes = getSquareVertexes(i, j, partSize);
             squareObject.faces = getSquareFaces();
             squareObject.vertex_buffer = GL.createBuffer();
@@ -157,7 +156,6 @@ function logError(message) {
 
 function logNormal(message) {
     var logRow = '<p>' + message + '</p>';
-    console.log('log normal');
     logBox.innerHTML = logBox.innerHTML + logRow;
 }
 
@@ -168,7 +166,7 @@ function initLogger() {
 function initWebGL() {
     initLogger();
     canvas = document.getElementById('glCanvas');
-    initMouseEvent();
+    initMouseEvents();
     try {
         GL = canvas.getContext('webgl', {antialias: true}) || canvas.getContext('web-gl-academy-context', {antialias: true});
     } catch (e) {
@@ -185,9 +183,7 @@ function initWebGL() {
     GL.clearDepth(1.0);                 // Clear everything
     GL.enable(GL.DEPTH_TEST);           // Enable depth testing
     GL.depthFunc(GL.LEQUAL);
-    var vertex_shader = get_shader(vertex_shader_src, GL.VERTEX_SHADER);
-    var fragment_shader = get_shader(fragment_shader_src, GL.FRAGMENT_SHADER);
-    var program = createProgram(vertex_shader, fragment_shader);
+    var program = glUtils.createProgram(GL, 'shader-vs', 'shader-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
     squares = createSquares(4);
@@ -235,50 +231,6 @@ function initWebGL() {
     return true;
 }
 
-var vertex_shader_src = "\n\
-    attribute vec3 position;\n\
-    attribute vec2 a_tex_coords;\n\
-    varying vec2 tex_coords;\n\
-    uniform mat4 Pmatrix;\n\
-    uniform mat4 Vmatrix;\n\
-    uniform mat4 MmatrixY;\n\
-    void main(void) {\
-        gl_Position = Pmatrix*Vmatrix*MmatrixY*vec4(position, 1.);\
-        tex_coords = a_tex_coords;\
-    }";
-
-var fragment_shader_src = "\
-    precision mediump float;\n\
-    varying vec2 tex_coords;\n\
-    uniform sampler2D u_image;\n\
-    void main(void) {\
-        gl_FragColor = texture2D(u_image, tex_coords);\
-    }";
-
-function getShaderNameByType(type) {
-    return type == GL.VERTEX_SHADER ? 'vertex' : 'fragment';
-}
-
-function createProgram(v_shader, f_shader) {
-    var program = GL.createProgram();
-    GL.attachShader(program, v_shader);
-    GL.attachShader(program, f_shader);
-    GL.linkProgram(program);
-    return program;
-}
-
-var get_shader = function (source, type) {
-    var shader = GL.createShader(type);
-    GL.shaderSource(shader, source);
-    GL.compileShader(shader);
-    if (!GL.getShaderParameter(shader, GL.COMPILE_STATUS)) {
-        logError('ERROR IN ' + getShaderNameByType(type) + ' ' + GL.getShaderInfoLog(shader));
-        return false;
-    }
-    logNormal(getShaderNameByType(type) + 'compiled');
-    return shader;
-}
-
 // mouse events variables
 var drag = false;
 var old_x;
@@ -304,7 +256,7 @@ var mouseMove = function (e) {
     e.preventDefault();
 };
 
-function initMouseEvent() {
+function initMouseEvents() {
     canvas.addEventListener("mousedown", mouseDown, false);
     canvas.addEventListener("mouseup", mouseUp, false);
     canvas.addEventListener("mouseout", mouseUp, false);
