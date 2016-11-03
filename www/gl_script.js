@@ -46,6 +46,42 @@ function createCircles(dimension, angleStep) {
     return circles;
 }
 
+function getTextureCoords(circle) {
+    var textureCoords = [];
+    //var coords = [[0,0],[1,0],[0,1]];
+    for (var i = 0; i < circle.vertexes.length; i+=3) {
+        textureCoords.push(circle.vertexes[i]);
+        textureCoords.push(circle.vertexes[i+1]);
+    }
+    return textureCoords;
+}
+
+function createTexture(image, circle) {
+    var texture = {};
+    texture.buffer = GL.createBuffer();
+    GL.bindBuffer(GL.ARRAY_BUFFER, texture.buffer);
+    GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(getTextureCoords(circle)), GL.STATIC_DRAW);
+
+    // Create a texture.
+    texture.texture = GL.createTexture();
+    GL.bindTexture(GL.TEXTURE_2D, texture.texture);
+
+    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE);
+    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE);
+    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST);
+    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
+
+    GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, image);
+    GL.bindTexture(GL.TEXTURE_2D, null);
+    return texture;
+}
+
+function setTextures(image) {
+    for (var i = 0; i < circles.length; i++) {
+        circles[i].texture = createTexture(image, circles[i]);
+    }
+}
+
 function getVertexesColors(numberOfVertexes) {
     var c = [];
     for (var i = 0; i < numberOfVertexes; i += 3) {
@@ -113,9 +149,10 @@ function initWebGL() {
     var _Vmatrix = GL.getUniformLocation(program, "Vmatrix");
     var _Pmatrix = GL.getUniformLocation(program, "Pmatrix");
     var _position = GL.getAttribLocation(program, 'position');
+    var _texCoords = GL.getAttribLocation(program, 'a_tex_coords');
     var _color = GL.getAttribLocation(program, 'color');
     GL.useProgram(program);
-    circles = createCircles(2, 10);
+    circles = createCircles(1, 90);
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX_Y = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
@@ -128,6 +165,9 @@ function initWebGL() {
     GL.clearDepth(1.0);
     GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
+    GL.enableVertexAttribArray(_position);
+    GL.enableVertexAttribArray(_color);
+    GL.enableVertexAttribArray(_texCoords);
     var animate = function () {
         if (!drag) {
             dX *= amortization;
@@ -136,15 +176,18 @@ function initWebGL() {
         LIBS.set_I4(MOVEMATRIX_Y);
         LIBS.rotateY(MOVEMATRIX_Y, theta);
         for (var i = 0; i < circles.length; ++i) {
-
             GL.bindBuffer(GL.ARRAY_BUFFER, circles[i].vertex_buffer);
             GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, circles[i].faces_buffer);
-            GL.enableVertexAttribArray(_position);
             GL.vertexAttribPointer(_position, 3, GL.FLOAT, false, 0, 0);
 
             GL.bindBuffer(GL.ARRAY_BUFFER, circles[i].colors_buffer);
-            GL.enableVertexAttribArray(_color);
             GL.vertexAttribPointer(_color, 3, GL.UNSIGNED_BYTE, true, 0, 0);
+
+            GL.bindBuffer(GL.ARRAY_BUFFER, circles[i].texture.buffer);
+            GL.vertexAttribPointer(_texCoords, 3, GL.UNSIGNED_BYTE, true, 0, 0);
+            GL.activeTexture(circles[i].texture.texture);
+            GL.bindTexture(GL.TEXTURE_2D, circles[i].texture.texture);
+            GL.uniform1i(GL.getUniformLocation(program, "u_image"), 0);
 
             GL.uniformMatrix4fv(_MmatrixY, false, MOVEMATRIX_Y);
             GL.drawElements(GL.TRIANGLE_FAN, circles[i].faces.length, GL.UNSIGNED_SHORT, 0);
@@ -152,27 +195,33 @@ function initWebGL() {
         GL.flush();
         window.requestAnimationFrame(animate);
     };
-    animate();
+    var image = new Image();
+    image.src = "http://localhost:63342/webGLAcademy/www/img/smile.png";
+    image.onload = function () {
+        setTextures(image);
+        animate();
+    }
     return true;
 }
 
 var vertex_shader_src = "\n\
     attribute vec3 position;\n\
-    attribute vec3 color;\n\
+    attribute vec2 a_tex_coords;\n\
+    varying vec2 tex_coords;\n\
     uniform mat4 Pmatrix;\n\
     uniform mat4 Vmatrix;\n\
-    varying vec3 vColor;\n\
     uniform mat4 MmatrixY;\n\
     void main(void) {\
         gl_Position = Pmatrix*Vmatrix*MmatrixY*vec4(position, 1.);\
-        vColor = color;\
+        tex_coords = a_tex_coords;\
     }";
 
 var fragment_shader_src = "\
     precision mediump float;\n\
-    varying vec3 vColor;\n\
+    varying vec2 tex_coords;\n\
+    uniform sampler2D u_image;\n\
     void main(void) {\
-        gl_FragColor = vec4(vColor, 1.);\
+        gl_FragColor = texture2D(u_image, tex_coords);\
     }";
 
 function getShaderNameByType(type) {
