@@ -4,6 +4,11 @@ var squares;
 var canvas;
 var theta = 0;
 var shader_ptr = {};
+var translation = {
+    x: 0.0,
+    y: 0.0,
+    z: 0.0
+}
 
 function initShaderVariablesPointer(program) {
     shader_ptr._MmatrixY = GL.getUniformLocation(program, "MmatrixY");
@@ -15,6 +20,7 @@ function initShaderVariablesPointer(program) {
     shader_ptr._kernel = GL.getUniformLocation(program, "u_kernel[0]");
     shader_ptr._kernelWeight = GL.getUniformLocation(program, "u_kernelWeight");
     shader_ptr._textureSize = GL.getUniformLocation(program, "u_textureSize");
+    shader_ptr._translation = GL.getUniformLocation(program, "u_translation");
 }
 
 function createSquares(dimension) {
@@ -85,8 +91,9 @@ function createTexture(image) {
     GL.bindTexture(GL.TEXTURE_2D, texture.texture);
     GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, true);
     GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, image);
-    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
+
     GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST);
+    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
     GL.bindTexture(GL.TEXTURE_2D, null);
     return texture;
 }
@@ -190,7 +197,7 @@ function initWebGL() {
     var program = glUtils.createProgram(GL, 'shader-vs', 'shader-convultion-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
-    squares = createSquares(2);
+    squares = createSquares(1);
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX_Y = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
@@ -223,6 +230,7 @@ function initWebGL() {
             GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, squares[i].faces_buffer);
             GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, MOVEMATRIX_Y);
             GL.uniform2f(shader_ptr._textureSize, squares[i].size, squares[i].size);
+            GL.uniform3f(shader_ptr._translation, translation.x, translation.y, translation.z);
             GL.drawElements(GL.TRIANGLES, squares[i].faces.length, GL.UNSIGNED_SHORT, 0);
         }
         GL.flush();
@@ -394,3 +402,8 @@ function initConvultionComboBox() {
     ui.appendChild(select);
 }
 
+function onTranslationInputChange(coordinate) {
+    var value = parseInt(document.getElementById('translation_'+coordinate).value);
+    console.log(value);
+    translation[coordinate] = value;
+}
