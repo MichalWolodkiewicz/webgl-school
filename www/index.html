@@ -8,6 +8,7 @@
     <script type="text/javascript" src="gl_script.js"></script>
 </head>
 <body onload="initWebGL(); initLogger();" style="text-align: center;">
+<div id="ui"></div>
 <canvas width="600px" height="600px" id="glCanvas"></canvas>
 <div id="log-box" style="width:500px; height:200px;position: static; bottom: 0px; left:0px;"></div>
 <script id="shader-vs" type="x-shader/x-fragment">
@@ -21,6 +22,7 @@
         gl_Position = Pmatrix*Vmatrix*MmatrixY*vec4(position, 1.);
         tex_coords = a_tex_coords;
     }
+
 </script>
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
@@ -29,6 +31,33 @@
     void main(void) {
         gl_FragColor = texture2D(u_image, tex_coords);
     }
+
 </script>
+
+<script id="shader-convultion-fs" type="x-shader/x-fragment">
+     precision mediump float;
+     varying vec2 tex_coords;
+     uniform sampler2D u_image;
+     //convultion effect variables
+     uniform vec2 u_textureSize;
+     uniform float u_kernel[9];
+     uniform float u_kernelWeight;
+     void main(void) {
+         vec2 onePixel = vec2(1.0, 1.0) / u_textureSize;
+         vec4 colorSum =
+         texture2D(u_image, tex_coords + onePixel * vec2(-1, -1)) * u_kernel[0] +
+         texture2D(u_image, tex_coords + onePixel * vec2( 0, -1)) * u_kernel[1] +
+         texture2D(u_image, tex_coords + onePixel * vec2( 1, -1)) * u_kernel[2] +
+         texture2D(u_image, tex_coords + onePixel * vec2(-1,  0)) * u_kernel[3] +
+         texture2D(u_image, tex_coords + onePixel * vec2( 0,  0)) * u_kernel[4] +
+         texture2D(u_image, tex_coords + onePixel * vec2( 1,  0)) * u_kernel[5] +
+         texture2D(u_image, tex_coords + onePixel * vec2(-1,  1)) * u_kernel[6] +
+         texture2D(u_image, tex_coords + onePixel * vec2( 0,  1)) * u_kernel[7] +
+         texture2D(u_image, tex_coords + onePixel * vec2( 1,  1)) * u_kernel[8] ;
+         gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, 1.0);
+    }
+
+</script>
+
 </body>
 </html>

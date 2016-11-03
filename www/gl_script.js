@@ -12,6 +12,9 @@ function initShaderVariablesPointer(program) {
     shader_ptr._position = GL.getAttribLocation(program, 'position');
     shader_ptr._texCoords = GL.getAttribLocation(program, 'a_tex_coords');
     shader_ptr._u_image = GL.getUniformLocation(program, "u_image");
+    shader_ptr._kernel = GL.getUniformLocation(program, "u_kernel[0]");
+    shader_ptr._kernelWeight = GL.getUniformLocation(program, "u_kernelWeight");
+    shader_ptr._textureSize = GL.getUniformLocation(program, "u_textureSize");
 }
 
 function createSquares(dimension) {
@@ -167,6 +170,7 @@ function initWebGL() {
     initLogger();
     canvas = document.getElementById('glCanvas');
     initMouseEvents();
+    initConvultionComboBox();
     try {
         GL = canvas.getContext('webgl', {antialias: true}) || canvas.getContext('web-gl-academy-context', {antialias: true});
     } catch (e) {
@@ -183,19 +187,20 @@ function initWebGL() {
     GL.clearDepth(1.0);                 // Clear everything
     GL.enable(GL.DEPTH_TEST);           // Enable depth testing
     GL.depthFunc(GL.LEQUAL);
-    var program = glUtils.createProgram(GL, 'shader-vs', 'shader-fs');
+    var program = glUtils.createProgram(GL, 'shader-vs', 'shader-convultion-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
-    squares = createSquares(4);
+    squares = createSquares(2);
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX_Y = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
-    LIBS.translateZ(VIEWMATRIX, -3);
+    LIBS.translateZ(VIEWMATRIX, -4);
     GL.uniformMatrix4fv(shader_ptr._Pmatrix, false, PROJMATRIX);
     GL.uniformMatrix4fv(shader_ptr._Vmatrix, false, VIEWMATRIX);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
+    changeConvultionKernel('normal');
     var animate = function () {
         GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
         if (!drag) {
@@ -217,13 +222,14 @@ function initWebGL() {
 
             GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, squares[i].faces_buffer);
             GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, MOVEMATRIX_Y);
+            GL.uniform2f(shader_ptr._textureSize, squares[i].size, squares[i].size);
             GL.drawElements(GL.TRIANGLES, squares[i].faces.length, GL.UNSIGNED_SHORT, 0);
         }
         GL.flush();
         window.requestAnimationFrame(animate);
     };
     var image = new Image();
-    image.src = "img/smile.jpg";
+    image.src = "img/dev.png";
     image.onload = function () {
         setTextures(image);
         animate();
@@ -261,5 +267,130 @@ function initMouseEvents() {
     canvas.addEventListener("mouseup", mouseUp, false);
     canvas.addEventListener("mouseout", mouseUp, false);
     canvas.addEventListener("mousemove", mouseMove, false);
+}
+
+var kernels = {
+    normal: [
+        0, 0, 0,
+        0, 1, 0,
+        0, 0, 0
+    ],
+    gaussianBlur: [
+        0.045, 0.122, 0.045,
+        0.122, 0.332, 0.122,
+        0.045, 0.122, 0.045
+    ],
+    gaussianBlur2: [
+        1, 2, 1,
+        2, 4, 2,
+        1, 2, 1
+    ],
+    gaussianBlur3: [
+        0, 1, 0,
+        1, 1, 1,
+        0, 1, 0
+    ],
+    unsharpen: [
+        -1, -1, -1,
+        -1,  9, -1,
+        -1, -1, -1
+    ],
+    sharpness: [
+        0,-1, 0,
+        -1, 5,-1,
+        0,-1, 0
+    ],
+    sharpen: [
+        -1, -1, -1,
+        -1, 16, -1,
+        -1, -1, -1
+    ],
+    edgeDetect: [
+        -0.125, -0.125, -0.125,
+        -0.125,  1,     -0.125,
+        -0.125, -0.125, -0.125
+    ],
+    edgeDetect2: [
+        -1, -1, -1,
+        -1,  8, -1,
+        -1, -1, -1
+    ],
+    edgeDetect3: [
+        -5, 0, 0,
+        0, 0, 0,
+        0, 0, 5
+    ],
+    edgeDetect4: [
+        -1, -1, -1,
+        0,  0,  0,
+        1,  1,  1
+    ],
+    edgeDetect5: [
+        -1, -1, -1,
+        2,  2,  2,
+        -1, -1, -1
+    ],
+    edgeDetect6: [
+        -5, -5, -5,
+        -5, 39, -5,
+        -5, -5, -5
+    ],
+    sobelHorizontal: [
+        1,  2,  1,
+        0,  0,  0,
+        -1, -2, -1
+    ],
+    sobelVertical: [
+        1,  0, -1,
+        2,  0, -2,
+        1,  0, -1
+    ],
+    previtHorizontal: [
+        1,  1,  1,
+        0,  0,  0,
+        -1, -1, -1
+    ],
+    previtVertical: [
+        1,  0, -1,
+        1,  0, -1,
+        1,  0, -1
+    ],
+    boxBlur: [
+        0.111, 0.111, 0.111,
+        0.111, 0.111, 0.111,
+        0.111, 0.111, 0.111
+    ],
+    triangleBlur: [
+        0.0625, 0.125, 0.0625,
+        0.125,  0.25,  0.125,
+        0.0625, 0.125, 0.0625
+    ],
+    emboss: [
+        -2, -1,  0,
+        -1,  1,  1,
+        0,  1,  2
+    ]
+};
+
+function changeConvultionKernel(value) {
+    GL.uniform1fv(shader_ptr._kernel, kernels[value]);
+    GL.uniform1f(shader_ptr._kernelWeight, glUtils.computeKernelWeight(kernels[value]));
+}
+function initConvultionComboBox() {
+    var ui = document.getElementById("ui");
+    var select = document.createElement("select")
+    for (var name in kernels) {
+        var option = document.createElement("option");
+        option.value = name;
+        if (name == 'normal') {
+            option.selected = true;
+        }
+        option.appendChild(document.createTextNode(name));
+        select.appendChild(option);
+    }
+    select.onchange = function(event) {
+        changeConvultionKernel(this.options[this.selectedIndex].value);
+    };
+    ui.appendChild(select);
 }
 

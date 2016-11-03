@@ -13,8 +13,21 @@ var glUtils = {
         return program;
     },
 
-    createShader: function (GL, sourceId, type) {
-        var shaderScript = document.getElementById(sourceId);
+    createShader: function (GL, elementId, type) {
+        var theSource = this.readShaderFromHTML(elementId);
+        var shader = GL.createShader(type);
+        GL.shaderSource(shader, theSource);
+        GL.compileShader(shader);
+        if (!GL.getShaderParameter(shader, GL.COMPILE_STATUS)) {
+            console.error('ERROR IN ' + this.getShaderNameByType(GL, type) + ' ' + GL.getShaderInfoLog(shader));
+            return false;
+        }
+        console.log(elementId + ' compiled');
+        return shader;
+    },
+
+    readShaderFromHTML: function (elementId) {
+        var shaderScript = document.getElementById(elementId);
         var theSource = "";
         var currentChild = shaderScript.firstChild;
         while (currentChild) {
@@ -23,14 +36,13 @@ var glUtils = {
             }
             currentChild = currentChild.nextSibling;
         }
-        var shader = GL.createShader(type);
-        GL.shaderSource(shader, theSource);
-        GL.compileShader(shader);
-        if (!GL.getShaderParameter(shader, GL.COMPILE_STATUS)) {
-            logError('ERROR IN ' + this.getShaderNameByType(GL, type) + ' ' + GL.getShaderInfoLog(shader));
-            return false;
-        }
-        logNormal(this.getShaderNameByType(GL, type) + 'compiled');
-        return shader;
+        return theSource;
+    },
+
+    computeKernelWeight: function (kernel) {
+        var weight = kernel.reduce(function (prev, curr) {
+            return prev + curr;
+        });
+        return weight <= 0 ? 1 : weight;
     }
 };
