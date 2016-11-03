@@ -17,10 +17,13 @@ function initShaderVariablesPointer(program) {
 function createSquares(dimension) {
     var squares = [];
     var partSize = 2 / dimension;
-    for (var i = -1 + partSize / 2; i < 1; i += partSize) {
-        for (var j = 1 - partSize / 2; j > -1; j -= partSize) {
+    var offset = 0.1 * partSize;
+    partSize -= offset;
+    for (var i = -1 + partSize / 2; i < 1; i += (partSize+offset)) {
+        for (var j = 1 - partSize / 2; j > -1; j -= (partSize+offset)) {
             var squareObject = {};
-            squareObject.vertexes = getSquareVertexes();
+            console.log(i+"."+j);
+            squareObject.vertexes = getSquareVertexes(i, j, partSize);
             squareObject.faces = getSquareFaces();
             squareObject.vertex_buffer = GL.createBuffer();
             squareObject.faces_buffer = GL.createBuffer();
@@ -38,35 +41,35 @@ function createSquares(dimension) {
 function getTextureCoords() {
     var textureCoordinates = [
         // Front
-        0.0,  0.0,
-        1.0,  0.0,
-        1.0,  1.0,
-        0.0,  1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
         // Back
-        0.0,  0.0,
-        1.0,  0.0,
-        1.0,  1.0,
-        0.0,  1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
         // Top
-        0.0,  0.0,
-        1.0,  0.0,
-        1.0,  1.0,
-        0.0,  1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
         // Bottom
-        0.0,  0.0,
-        1.0,  0.0,
-        1.0,  1.0,
-        0.0,  1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
         // Right
-        0.0,  0.0,
-        1.0,  0.0,
-        1.0,  1.0,
-        0.0,  1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
         // Left
-        0.0,  0.0,
-        1.0,  0.0,
-        1.0,  1.0,
-        0.0,  1.0
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0
     ];
     return textureCoordinates;
 }
@@ -104,43 +107,45 @@ function getSquareFaces() {
     return cubeVertexIndices;
 }
 
-function getSquareVertexes() {
+function getSquareVertexes(leftX, topY,size) {
+    var rightX = leftX + size;
+    var bottomY = topY - size;
     var vertices = [
         // Front face
-        -1.0, -1.0, 1.0,
-        1.0, -1.0, 1.0,
-        1.0, 1.0, 1.0,
-        -1.0, 1.0, 1.0,
+        leftX, bottomY, size/2,
+        rightX, bottomY, size/2,
+        rightX, topY, size/2,
+        leftX, topY, size/2,
 
         // Back face
-        -1.0, -1.0, -1.0,
-        -1.0, 1.0, -1.0,
-        1.0, 1.0, -1.0,
-        1.0, -1.0, -1.0,
+        leftX, bottomY, -size/2,
+        leftX, topY, -size/2,
+        rightX, topY, -size/2,
+        rightX, bottomY, -size/2,
 
         // Top face
-        -1.0, 1.0, -1.0,
-        -1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0,
-        1.0, 1.0, -1.0,
+        leftX, topY, -size/2,
+        leftX, topY, size/2,
+        rightX, topY, size/2,
+        rightX, topY, -size/2,
 
         // Bottom face
-        -1.0, -1.0, -1.0,
-        1.0, -1.0, -1.0,
-        1.0, -1.0, 1.0,
-        -1.0, -1.0, 1.0,
+        leftX, bottomY, -size/2,
+        rightX, bottomY, -size/2,
+        rightX, bottomY, size/2,
+        leftX, bottomY, size/2,
 
         // Right face
-        1.0, -1.0, -1.0,
-        1.0, 1.0, -1.0,
-        1.0, 1.0, 1.0,
-        1.0, -1.0, 1.0,
+        rightX, bottomY, -size/2,
+        rightX, topY, -size/2,
+        rightX, topY, size/2,
+        rightX, bottomY, size/2,
 
         // Left face
-        -1.0, -1.0, -1.0,
-        -1.0, -1.0, 1.0,
-        -1.0, 1.0, 1.0,
-        -1.0, 1.0, -1.0
+        leftX, bottomY, -size/2,
+        leftX, bottomY, size/2,
+        leftX, topY, size/2,
+        leftX, topY, -size/2
     ];
     return vertices;
 }
@@ -185,11 +190,11 @@ function initWebGL() {
     var program = createProgram(vertex_shader, fragment_shader);
     GL.useProgram(program);
     initShaderVariablesPointer(program);
-    squares = createSquares(1);
+    squares = createSquares(4);
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX_Y = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
-    LIBS.translateZ(VIEWMATRIX, -5);
+    LIBS.translateZ(VIEWMATRIX, -3);
     GL.uniformMatrix4fv(shader_ptr._Pmatrix, false, PROJMATRIX);
     GL.uniformMatrix4fv(shader_ptr._Vmatrix, false, VIEWMATRIX);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
