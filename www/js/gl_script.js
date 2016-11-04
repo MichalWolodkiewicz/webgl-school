@@ -10,7 +10,6 @@ var translation = {
     y:0.0,
     z:0.0
 };
-var rotation = [0.0, 1.0];
 
 function initShaderVariablesPointer(program) {
     shader_ptr._MmatrixY = GL.getUniformLocation(program, "MmatrixY");
@@ -31,8 +30,8 @@ function createSquares(dimension) {
     var partSize = 2 / dimension;
     var offset = 0.1 * partSize;
     partSize -= offset;
-    for (var i = -1 + partSize / 2; i < 1; i += (partSize+offset)) {
-        for (var j = 1 - partSize / 2; j > -1; j -= (partSize+offset)) {
+    for (var i = -1; i < 1; i += (partSize+offset)) {
+        for (var j = 1; j > -1; j -= (partSize+offset)) {
             var squareObject = {};
             squareObject.vertexes = getSquareVertexes(i, j, partSize);
             squareObject.faces = getSquareFaces();
@@ -120,6 +119,7 @@ function getSquareFaces() {
 }
 
 function getSquareVertexes(leftX, topY,size) {
+    console.log(leftX+"   "+topY+"   "+size);
     var rightX = leftX + size;
     var bottomY = topY - size;
     var vertices = [
@@ -190,7 +190,7 @@ function initWebGL() {
     var program = glUtils.createProgram(GL, 'shader-vs', 'shader-convultion-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
-    squares = createSquares(1);
+    squares = createSquares(8);
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX_Y = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
