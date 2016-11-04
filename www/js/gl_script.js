@@ -4,11 +4,13 @@ var squares;
 var canvas;
 var theta = 0;
 var shader_ptr = {};
+var scaleRatio = 1.0;
 var translation = {
-    x: 0.0,
-    y: 0.0,
-    z: 0.0
-}
+    x:0.0,
+    y:0.0,
+    z:0.0
+};
+var rotation = [0.0, 1.0];
 
 function initShaderVariablesPointer(program) {
     shader_ptr._MmatrixY = GL.getUniformLocation(program, "MmatrixY");
@@ -21,6 +23,7 @@ function initShaderVariablesPointer(program) {
     shader_ptr._kernelWeight = GL.getUniformLocation(program, "u_kernelWeight");
     shader_ptr._textureSize = GL.getUniformLocation(program, "u_textureSize");
     shader_ptr._translation = GL.getUniformLocation(program, "u_translation");
+    shader_ptr._scale = GL.getUniformLocation(program, "u_scale");
 }
 
 function createSquares(dimension) {
@@ -221,6 +224,7 @@ function initWebGL() {
             GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, MOVEMATRIX_Y);
             GL.uniform2f(shader_ptr._textureSize, squares[i].size, squares[i].size);
             GL.uniform3f(shader_ptr._translation, translation.x, translation.y, translation.z);
+            GL.uniform1f(shader_ptr._scale, scaleRatio);
             GL.drawElements(GL.TRIANGLES, squares[i].faces.length, GL.UNSIGNED_SHORT, 0);
         }
         GL.flush();
@@ -395,4 +399,10 @@ function initConvultionComboBox() {
 function onTranslationInputChange(coordinate) {
     var value = parseInt(document.getElementById('translation_'+coordinate).value);
     translation[coordinate] = value/100.0;
+}
+
+function onScaleInputChange() {
+    var value = parseInt(document.getElementById('scaleInput').value);
+    scaleRatio = value/100.0;
+    console.log(scaleRatio);
 }

@@ -29,6 +29,11 @@
         <div id="kernelFilter" class="ui-property-box">
             <b>Kernel filter:</b><br/>
         </div>
+        <div class="ui-property-box">
+            <b>Scale:</b><br/>
+            <input type="range" id="scaleInput" oninput="onScaleInputChange()" min="1" max="200"
+                   step="0.2"><br/>
+        </div>
     </div>
     <div style="float:right;width:75%">
         <canvas width="600px" height="600px" id="glCanvas"></canvas>
@@ -42,15 +47,11 @@
     uniform mat4 Vmatrix;
     uniform mat4 MmatrixY;
     uniform vec3 u_translation;
+    uniform float u_scale;
     void main(void) {
-        gl_Position = Pmatrix*Vmatrix*MmatrixY*(vec4(position, 1.)+vec4(u_translation, 0.0));
+        gl_Position = Pmatrix*Vmatrix*MmatrixY*(vec4(position, 1.)*vec4(u_scale,u_scale,u_scale,1)+vec4(u_translation, 0.0));
         tex_coords = a_tex_coords;
     }
-
-
-
-
-
 </script>
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
@@ -59,11 +60,6 @@
     void main(void) {
         gl_FragColor = texture2D(u_image, tex_coords);
     }
-
-
-
-
-
 </script>
 
 <script id="shader-convultion-fs" type="x-shader/x-fragment">
@@ -88,11 +84,6 @@
          texture2D(u_image, tex_coords + onePixel * vec2( 1,  1)) * u_kernel[8] ;
          gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, 1.0);
     }
-
-
-
-
-
 </script>
 
 </body>
