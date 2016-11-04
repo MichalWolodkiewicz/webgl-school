@@ -159,16 +159,6 @@ function getSquareVertexes(leftX, topY,size) {
     return vertices;
 }
 
-function logError(message) {
-    var logRow = '<p style="color: #ef1214;">' + message + '</p>';
-    logBox.innerHTML = logBox.innerHTML + logRow;
-}
-
-function logNormal(message) {
-    var logRow = '<p>' + message + '</p>';
-    logBox.innerHTML = logBox.innerHTML + logRow;
-}
-
 function initLogger() {
     logBox = document.getElementById('log-box');
 }
@@ -181,14 +171,14 @@ function initWebGL() {
     try {
         GL = canvas.getContext('webgl', {antialias: true}) || canvas.getContext('web-gl-academy-context', {antialias: true});
     } catch (e) {
-        logError(e);
+        console.error(e);
         return false;
     }
     if (GL === null) {
-        logError('GL context is null');
+        console.error('GL context is null');
         return false;
     } else {
-        logNormal('web gl context initialized properly.');
+        console.log('web gl context initialized properly.');
     }
     GL.clearColor(1.0, 0.0, 0.0, 1.0);  // Clear to red, fully opaque
     GL.clearDepth(1.0);                 // Clear everything
@@ -385,7 +375,7 @@ function changeConvultionKernel(value) {
     GL.uniform1f(shader_ptr._kernelWeight, glUtils.computeKernelWeight(kernels[value]));
 }
 function initConvultionComboBox() {
-    var ui = document.getElementById("ui");
+    var ui = document.getElementById("kernelFilter");
     var select = document.createElement("select")
     for (var name in kernels) {
         var option = document.createElement("option");
@@ -404,6 +394,5 @@ function initConvultionComboBox() {
 
 function onTranslationInputChange(coordinate) {
     var value = parseInt(document.getElementById('translation_'+coordinate).value);
-    console.log(value);
-    translation[coordinate] = value;
+    translation[coordinate] = value/100.0;
 }
