@@ -1,14 +1,14 @@
 var GL;
 var logBox;
-var squares;
+var cube;
 var canvas;
 var theta = 0;
 var shader_ptr = {};
 var scaleRatio = 1.0;
 var translation = {
-    x:0.0,
-    y:0.0,
-    z:0.0
+    x: 0.0,
+    y: 0.0,
+    z: 0.0
 };
 var SCALE_MATRIX = LIBS.get_I4();
 var image;
@@ -27,24 +27,27 @@ function initShaderVariablesPointer(program) {
     shader_ptr._scale = GL.getUniformLocation(program, "u_scale");
 }
 
-function createSquares(dimension) {
+function createCube(dimension) {
     var squares = [];
     var partSize = 2 / dimension;
     var offset = 0.1 * partSize;
     partSize -= offset;
-    for (var i = -1; i < 1; i += (partSize+offset)) {
-        for (var j = 1; j > -1; j -= (partSize+offset)) {
-            var squareObject = {};
-            squareObject.vertexes = getSquareVertexes(i, j, partSize);
-            squareObject.faces = getSquareFaces();
-            squareObject.vertex_buffer = GL.createBuffer();
-            squareObject.faces_buffer = GL.createBuffer();
-            squareObject.size = partSize;
-            GL.bindBuffer(GL.ARRAY_BUFFER, squareObject.vertex_buffer);
-            GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(squareObject.vertexes), GL.STATIC_DRAW);
-            GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, squareObject.faces_buffer);
-            GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, new Uint16Array(squareObject.faces), GL.STATIC_DRAW);
-            squares.push(squareObject);
+    for (var x = -1; x < 1; x += (partSize + offset)) {
+        for (var y = 1; y > -1; y -= (partSize + offset)) {
+            for (var z = 1; z > -1; z -= (partSize + offset)) {
+                console.log(z);
+                var squareObject = {};
+                squareObject.vertexes = getSquareVertexes(x, y, z, partSize);
+                squareObject.faces = getSquareFaces();
+                squareObject.vertex_buffer = GL.createBuffer();
+                squareObject.faces_buffer = GL.createBuffer();
+                squareObject.size = partSize;
+                GL.bindBuffer(GL.ARRAY_BUFFER, squareObject.vertex_buffer);
+                GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(squareObject.vertexes), GL.STATIC_DRAW);
+                GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, squareObject.faces_buffer);
+                GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, new Uint16Array(squareObject.faces), GL.STATIC_DRAW);
+                squares.push(squareObject);
+            }
         }
     }
     return squares;
@@ -103,8 +106,8 @@ function createTexture(image) {
 }
 
 function setTextures(image) {
-    for (var i = 0; i < squares.length; i++) {
-        squares[i].texture = createTexture(image, squares[i]);
+    for (var i = 0; i < cube.length; i++) {
+        cube[i].texture = createTexture(image, cube[i]);
     }
 }
 
@@ -120,45 +123,46 @@ function getSquareFaces() {
     return cubeVertexIndices;
 }
 
-function getSquareVertexes(leftX, topY,size) {
+function getSquareVertexes(leftX, topY, frontFaceZ, size) {
     var rightX = leftX + size;
     var bottomY = topY - size;
+    var backFaceZ = frontFaceZ - size;
     var vertices = [
         // Front face
-        leftX, bottomY, size/2,
-        rightX, bottomY, size/2,
-        rightX, topY, size/2,
-        leftX, topY, size/2,
+        leftX, bottomY, frontFaceZ,
+        rightX, bottomY, frontFaceZ,
+        rightX, topY, frontFaceZ,
+        leftX, topY, frontFaceZ,
 
         // Back face
-        leftX, bottomY, -size/2,
-        leftX, topY, -size/2,
-        rightX, topY, -size/2,
-        rightX, bottomY, -size/2,
+        leftX, bottomY, backFaceZ,
+        leftX, topY, backFaceZ,
+        rightX, topY, backFaceZ,
+        rightX, bottomY, backFaceZ,
 
         // Top face
-        leftX, topY, -size/2,
-        leftX, topY, size/2,
-        rightX, topY, size/2,
-        rightX, topY, -size/2,
+        leftX, topY, backFaceZ,
+        leftX, topY, frontFaceZ,
+        rightX, topY, frontFaceZ,
+        rightX, topY, backFaceZ,
 
         // Bottom face
-        leftX, bottomY, -size/2,
-        rightX, bottomY, -size/2,
-        rightX, bottomY, size/2,
-        leftX, bottomY, size/2,
+        leftX, bottomY, backFaceZ,
+        rightX, bottomY, backFaceZ,
+        rightX, bottomY, frontFaceZ,
+        leftX, bottomY, frontFaceZ,
 
         // Right face
-        rightX, bottomY, -size/2,
-        rightX, topY, -size/2,
-        rightX, topY, size/2,
-        rightX, bottomY, size/2,
+        rightX, bottomY, backFaceZ,
+        rightX, topY, backFaceZ,
+        rightX, topY, frontFaceZ,
+        rightX, bottomY, frontFaceZ,
 
         // Left face
-        leftX, bottomY, -size/2,
-        leftX, bottomY, size/2,
-        leftX, topY, size/2,
-        leftX, topY, -size/2
+        leftX, bottomY, backFaceZ,
+        leftX, bottomY, frontFaceZ,
+        leftX, topY, frontFaceZ,
+        leftX, topY, backFaceZ
     ];
     return vertices;
 }
@@ -191,7 +195,7 @@ function initWebGL() {
     var program = glUtils.createProgram(GL, 'shader-vs', 'shader-convultion-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
-    squares = createSquares(8);
+    cube = createCube(2);
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX_Y = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
@@ -211,22 +215,22 @@ function initWebGL() {
         }
         LIBS.set_I4(MOVEMATRIX_Y);
         LIBS.rotateY(MOVEMATRIX_Y, theta);
-        for (var i = 0; i < squares.length; ++i) {
-            GL.bindBuffer(GL.ARRAY_BUFFER, squares[i].vertex_buffer);
+        for (var i = 0; i < cube.length; ++i) {
+            GL.bindBuffer(GL.ARRAY_BUFFER, cube[i].vertex_buffer);
             GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false, 0, 0);
 
-            GL.bindBuffer(GL.ARRAY_BUFFER, squares[i].texture.buffer);
+            GL.bindBuffer(GL.ARRAY_BUFFER, cube[i].texture.buffer);
             GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false, 0, 0);
 
             GL.activeTexture(GL.TEXTURE0);
-            GL.bindTexture(GL.TEXTURE_2D, squares[i].texture.texture);
+            GL.bindTexture(GL.TEXTURE_2D, cube[i].texture.texture);
             GL.uniform1i(shader_ptr._u_image, 0);
 
-            GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, squares[i].faces_buffer);
+            GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, cube[i].faces_buffer);
             GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, MOVEMATRIX_Y);
-            GL.uniform2f(shader_ptr._textureSize, squares[i].size, squares[i].size);
+            GL.uniform2f(shader_ptr._textureSize, cube[i].size, cube[i].size);
             GL.uniform3f(shader_ptr._translation, translation.x, translation.y, translation.z);
-            GL.drawElements(GL.TRIANGLES, squares[i].faces.length, GL.UNSIGNED_SHORT, 0);
+            GL.drawElements(GL.TRIANGLES, cube[i].faces.length, GL.UNSIGNED_SHORT, 0);
         }
         GL.flush();
         window.requestAnimationFrame(animate);
@@ -295,13 +299,13 @@ var kernels = {
     ],
     unsharpen: [
         -1, -1, -1,
-        -1,  9, -1,
+        -1, 9, -1,
         -1, -1, -1
     ],
     sharpness: [
-        0,-1, 0,
-        -1, 5,-1,
-        0,-1, 0
+        0, -1, 0,
+        -1, 5, -1,
+        0, -1, 0
     ],
     sharpen: [
         -1, -1, -1,
@@ -310,12 +314,12 @@ var kernels = {
     ],
     edgeDetect: [
         -0.125, -0.125, -0.125,
-        -0.125,  1,     -0.125,
+        -0.125, 1, -0.125,
         -0.125, -0.125, -0.125
     ],
     edgeDetect2: [
         -1, -1, -1,
-        -1,  8, -1,
+        -1, 8, -1,
         -1, -1, -1
     ],
     edgeDetect3: [
@@ -325,12 +329,12 @@ var kernels = {
     ],
     edgeDetect4: [
         -1, -1, -1,
-        0,  0,  0,
-        1,  1,  1
+        0, 0, 0,
+        1, 1, 1
     ],
     edgeDetect5: [
         -1, -1, -1,
-        2,  2,  2,
+        2, 2, 2,
         -1, -1, -1
     ],
     edgeDetect6: [
@@ -339,24 +343,24 @@ var kernels = {
         -5, -5, -5
     ],
     sobelHorizontal: [
-        1,  2,  1,
-        0,  0,  0,
+        1, 2, 1,
+        0, 0, 0,
         -1, -2, -1
     ],
     sobelVertical: [
-        1,  0, -1,
-        2,  0, -2,
-        1,  0, -1
+        1, 0, -1,
+        2, 0, -2,
+        1, 0, -1
     ],
     previtHorizontal: [
-        1,  1,  1,
-        0,  0,  0,
+        1, 1, 1,
+        0, 0, 0,
         -1, -1, -1
     ],
     previtVertical: [
-        1,  0, -1,
-        1,  0, -1,
-        1,  0, -1
+        1, 0, -1,
+        1, 0, -1,
+        1, 0, -1
     ],
     boxBlur: [
         0.111, 0.111, 0.111,
@@ -365,13 +369,13 @@ var kernels = {
     ],
     triangleBlur: [
         0.0625, 0.125, 0.0625,
-        0.125,  0.25,  0.125,
+        0.125, 0.25, 0.125,
         0.0625, 0.125, 0.0625
     ],
     emboss: [
-        -2, -1,  0,
-        -1,  1,  1,
-        0,  1,  2
+        -2, -1, 0,
+        -1, 1, 1,
+        0, 1, 2
     ]
 };
 
@@ -391,27 +395,27 @@ function initConvultionComboBox() {
         option.appendChild(document.createTextNode(name));
         select.appendChild(option);
     }
-    select.onchange = function(event) {
+    select.onchange = function (event) {
         changeConvultionKernel(this.options[this.selectedIndex].value);
     };
     ui.appendChild(select);
 }
 
 function onTranslationInputChange(coordinate) {
-    var value = parseInt(document.getElementById('translation_'+coordinate).value);
-    translation[coordinate] = value/100.0;
+    var value = parseInt(document.getElementById('translation_' + coordinate).value);
+    translation[coordinate] = value / 100.0;
 }
 
 function onScaleInputChange() {
     var value = parseInt(document.getElementById('scaleInput').value);
-    scaleRatio = value/100.0;
+    scaleRatio = value / 100.0;
     LIBS.setScaleToMatrix(SCALE_MATRIX, scaleRatio);
     GL.uniformMatrix4fv(shader_ptr._scale, false, SCALE_MATRIX);
 }
 
 function onSquaresNumberInputChange() {
-    var numberOfSquares = parseInt(document.getElementById('squaresNumber').value);
-    squares = createSquares(numberOfSquares);
+    var numberOfSquares = parseInt(document.getElementById('cubeDimension').value);
+    cube = createCube(numberOfSquares);
     setTextures(image);
-    document.getElementById('numberOfSquaresLabel').innerHTML = numberOfSquares;
+    document.getElementById('cubeDimensionLabel').innerHTML = numberOfSquares;
 }
