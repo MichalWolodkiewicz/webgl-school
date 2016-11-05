@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <script type="text/javascript" src="js/kernels.js"></script>
     <script type="text/javascript" src="js/libs.js"></script>
     <script type="text/javascript" src="js/glUtils.js"></script>
-    <script type="text/javascript" src="js/gl_script.js"></script>
+    <script type="text/javascript" src="js/cube.js"></script>
+    <script type="text/javascript" src="js/ui_controller.js"></script>
     <style type="text/css">
         .ui-property-box {
             margin-top: 5px;
@@ -39,6 +41,15 @@
             <input type="range" id="cubeDimension" onchange="onSquaresNumberInputChange()" min="1" max="16"
                    step="1" value="2"><br/>
         </div>
+        <div class="ui-property-box">
+            <b>Rotation:</b><br/>
+            X<input type="range" id="rotation_x" oninput="onRotationInputChange('x')" min="0" max="360"
+                    step="1" value="0"><br/>
+            Y<input type="range" id="rotation_y" oninput="onRotationInputChange('y')" min="0" max="360"
+                    step="1" value="0"><br/>
+            Z<input type="range" id="rotation_z" oninput="onRotationInputChange('z')" min="0" max="360"
+                    step="1" value="0"><br/>
+        </div>
     </div>
     <div style="float:right;width:75%">
         <canvas width="600px" height="600px" id="glCanvas"></canvas>
@@ -58,6 +69,7 @@
         tex_coords = a_tex_coords;
     }
 
+
 </script>
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
@@ -66,6 +78,7 @@
     void main(void) {
         gl_FragColor = texture2D(u_image, tex_coords);
     }
+
 
 </script>
 
@@ -91,6 +104,7 @@
          texture2D(u_image, tex_coords + onePixel * vec2( 1,  1)) * u_kernel[8] ;
          gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, 1.0);
     }
+
 
 </script>
 
