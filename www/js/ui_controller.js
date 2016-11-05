@@ -100,38 +100,6 @@ function initWebGL() {
     return true;
 }
 
-// mouse events variables
-var drag = false;
-var old_x;
-var amortization = 0.95;
-var dX = 0.0;
-
-var mouseDown = function (e) {
-    drag = true;
-    old_x = e.pageX;
-    e.preventDefault();
-    return false;
-};
-
-var mouseUp = function (e) {
-    drag = false;
-};
-
-var mouseMove = function (e) {
-    if (!drag) return false;
-    dX = (e.pageX - old_x) * 2 * Math.PI / canvas.width;
-    theta += dX;
-    old_x = e.pageX;
-    e.preventDefault();
-};
-
-function initMouseEvents() {
-    canvas.addEventListener("mousedown", mouseDown, false);
-    canvas.addEventListener("mouseup", mouseUp, false);
-    canvas.addEventListener("mouseout", mouseUp, false);
-    canvas.addEventListener("mousemove", mouseMove, false);
-}
-
 function changeConvultionKernel(value) {
     GL.uniform1fv(shader_ptr._kernel, kernels[value]);
     GL.uniform1f(shader_ptr._kernelWeight, glUtils.computeKernelWeight(kernels[value]));
