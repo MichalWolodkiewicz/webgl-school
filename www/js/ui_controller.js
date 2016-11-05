@@ -53,6 +53,7 @@ function initWebGL() {
     GL.clearDepth(1.0);                 // Clear everything
     GL.enable(GL.DEPTH_TEST);           // Enable depth testing
     GL.depthFunc(GL.LEQUAL);
+    GL.enable(GL.CULL_FACE);
     var program = glUtils.createProgram(GL, 'shader-vs', 'shader-convultion-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
