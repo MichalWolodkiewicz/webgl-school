@@ -1,6 +1,5 @@
 var GL;
 var logBox;
-var cube;
 var canvas;
 var theta = 0;
 var shader_ptr = {};
@@ -8,9 +7,14 @@ var scaleRatio = 1.0;
 var SCALE_MATRIX = LIBS.get_I4();
 var TRANSLATION_MATRIX = LIBS.get_I4();
 var image;
+var ROTATION_X = LIBS.get_I4();
+var ROTATION_Y = LIBS.get_I4();
+var ROTATION_Z = LIBS.get_I4();
 
 function initShaderVariablesPointer(program) {
+    shader_ptr._MmatrixX = GL.getUniformLocation(program, "MmatrixX");
     shader_ptr._MmatrixY = GL.getUniformLocation(program, "MmatrixY");
+    shader_ptr._MmatrixZ = GL.getUniformLocation(program, "MmatrixZ");
     shader_ptr._Vmatrix = GL.getUniformLocation(program, "Vmatrix");
     shader_ptr._Pmatrix = GL.getUniformLocation(program, "Pmatrix");
     shader_ptr._position = GL.getAttribLocation(program, 'position');
@@ -53,7 +57,6 @@ function initWebGL() {
     initShaderVariablesPointer(program);
     CUBE.createCube(GL, 2);
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
-    var MOVEMATRIX_Y = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
     var TRANSLATION_MATRIX = LIBS.get_I4();
     LIBS.translateZ(VIEWMATRIX, -4);
@@ -67,12 +70,6 @@ function initWebGL() {
     changeConvultionKernel('normal');
     var animate = function () {
         GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
-        if (!drag) {
-            dX *= amortization;
-            theta += dX;
-        }
-        LIBS.set_I4(MOVEMATRIX_Y);
-        LIBS.rotateY(MOVEMATRIX_Y, theta);
         for (var i = 0; i < CUBE.cubes.length; ++i) {
             GL.bindBuffer(GL.ARRAY_BUFFER, CUBE.cubes[i].vertex_buffer);
             GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false, 0, 0);
@@ -85,7 +82,9 @@ function initWebGL() {
             GL.uniform1i(shader_ptr._u_image, 0);
 
             GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, CUBE.cubes[i].faces_buffer);
-            GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, MOVEMATRIX_Y);
+            GL.uniformMatrix4fv(shader_ptr._MmatrixX, false, ROTATION_X);
+            GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, ROTATION_Y);
+            GL.uniformMatrix4fv(shader_ptr._MmatrixZ, false, ROTATION_Z);
             GL.uniform2f(shader_ptr._textureSize, CUBE.cubes[i].size, CUBE.cubes[i].size);
             GL.drawElements(GL.TRIANGLES, CUBE.cubes[i].faces.length, GL.UNSIGNED_SHORT, 0);
         }
@@ -156,7 +155,7 @@ function initConvultionComboBox() {
 }
 
 function onTranslationInputChange(coordinate) {
-    var value = parseInt(document.getElementById('translation_' + coordinate).value)/100.0;
+    var value = parseInt(document.getElementById('translation_' + coordinate).value) / 100.0;
     if (coordinate == 'x') {
         LIBS.translateX(TRANSLATION_MATRIX, value);
     } else if (coordinate == 'y') {
@@ -176,18 +175,18 @@ function onScaleInputChange() {
 
 function onSquaresNumberInputChange() {
     var numberOfSquares = parseInt(document.getElementById('cubeDimension').value);
-    cube = createCube(numberOfSquares);
-    setTextures(image);
+    CUBE.createCube(numberOfSquares);
+    CUBE.setTextures(image);
     document.getElementById('cubeDimensionLabel').innerHTML = numberOfSquares;
 }
 
 function onRotationInputChange(coordinate) {
     var value = parseInt(document.getElementById('rotation_' + coordinate).value);
     if (coordinate == 'x') {
-        
+        LIBS.rotateX(ROTATION_X, LIBS.degToRad(value));
     } else if (coordinate == 'y') {
-        LIBS.rotateX(ROT)
+        LIBS.rotateY(ROTATION_Y, LIBS.degToRad(value));
     } else if (coordinate == 'z') {
-        LIBS.translateZ(TRANSLATION_MATRIX, value);
+        LIBS.rotateZ(ROTATION_Z, LIBS.degToRad(value));
     }
 }
