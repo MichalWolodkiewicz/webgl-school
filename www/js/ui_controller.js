@@ -24,6 +24,8 @@ function initShaderVariablesPointer(program) {
     shader_ptr._kernelWeight = GL.getUniformLocation(program, "u_kernelWeight");
     shader_ptr._textureSize = GL.getUniformLocation(program, "u_textureSize");
     shader_ptr._translation = GL.getUniformLocation(program, "u_translation");
+    shader_ptr._origin_translation = GL.getUniformLocation(program, "u_origin_translation");
+    shader_ptr._src_translation = GL.getUniformLocation(program, "u_src_translation");
     shader_ptr._scale = GL.getUniformLocation(program, "u_scale");
 }
 
@@ -58,6 +60,8 @@ function initWebGL() {
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var VIEWMATRIX = LIBS.get_I4();
     var TRANSLATION_MATRIX = LIBS.get_I4();
+    var TRANSLATION_SRC_MATRIX = LIBS.get_I4();
+    var TRANSLATION_ORIGIN_MATRIX = LIBS.get_I4();
     LIBS.translateZ(VIEWMATRIX, -4);
     GL.uniformMatrix4fv(shader_ptr._Pmatrix, false, PROJMATRIX);
     GL.uniformMatrix4fv(shader_ptr._Vmatrix, false, VIEWMATRIX);
@@ -91,6 +95,14 @@ function initWebGL() {
                 GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, ROTATION_Y);
                 GL.uniformMatrix4fv(shader_ptr._MmatrixZ, false, ROTATION_Z);
                 GL.uniform2f(shader_ptr._textureSize, CUBE.cubes[i].size, CUBE.cubes[i].size);
+                LIBS.translateX(TRANSLATION_SRC_MATRIX, CUBE.cubes[i].center.x);
+                LIBS.translateY(TRANSLATION_SRC_MATRIX, CUBE.cubes[i].center.y);
+                LIBS.translateZ(TRANSLATION_SRC_MATRIX, CUBE.cubes[i].center.z);
+                LIBS.translateX(TRANSLATION_ORIGIN_MATRIX, -CUBE.cubes[i].center.x);
+                LIBS.translateY(TRANSLATION_ORIGIN_MATRIX, -CUBE.cubes[i].center.y);
+                LIBS.translateZ(TRANSLATION_ORIGIN_MATRIX, -CUBE.cubes[i].center.z);
+                GL.uniformMatrix4fv(shader_ptr._src_translation, false, TRANSLATION_SRC_MATRIX);
+                GL.uniformMatrix4fv(shader_ptr._origin_translation, false, TRANSLATION_ORIGIN_MATRIX);
                 GL.drawElements(GL.TRIANGLES, CUBE.cubes[i].faces.length, GL.UNSIGNED_SHORT, 0);
             }
             GL.flush();

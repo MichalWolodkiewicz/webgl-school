@@ -65,9 +65,13 @@
     uniform mat4 MmatrixY;
     uniform mat4 MmatrixZ;
     uniform mat4 u_translation;
+    uniform mat4 u_origin_translation;
+    uniform mat4 u_src_translation;
     uniform mat4 u_scale;
     void main(void) {
-        gl_Position = Pmatrix*Vmatrix*u_translation*MmatrixX*MmatrixY*MmatrixZ*u_scale*vec4(position, 1.);
+        gl_Position = Pmatrix*Vmatrix*u_translation*u_src_translation*MmatrixX*MmatrixY*MmatrixZ*u_scale
+        *u_origin_translation*vec4
+        (position, 1.);
         tex_coords = a_tex_coords;
     }
 

@@ -62,14 +62,19 @@ var CUBE = {
         partSize -= offset;
         console.log(partSize);
         for (var x = -1; x + partSize < 1; x += (partSize + offset)) {
-            for (var y = 1; y - partSize> -1; y -= (partSize + offset)) {
-                for (var z = 1; z - partSize> -1; z -= (partSize + offset)) {
+            for (var y = 1; y - partSize > -1; y -= (partSize + offset)) {
+                for (var z = 1; z - partSize > -1; z -= (partSize + offset)) {
                     var squareObject = {};
                     squareObject.vertexes = this.getSquareVertexes(x, y, z, partSize);
                     squareObject.faces = this.getSquareFaces();
                     squareObject.vertex_buffer = GL.createBuffer();
                     squareObject.faces_buffer = GL.createBuffer();
                     squareObject.size = partSize;
+                    squareObject.center = {
+                        x: x + partSize / 2,
+                        y: y - partSize / 2,
+                        z: z - partSize / 2
+                    };
                     GL.bindBuffer(GL.ARRAY_BUFFER, squareObject.vertex_buffer);
                     GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(squareObject.vertexes), GL.STATIC_DRAW);
                     GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, squareObject.faces_buffer);
@@ -80,7 +85,8 @@ var CUBE = {
         }
     },
     releaseCubes: function (GL) {
-        for (var i = 0; i < this.cubes.length; ++i) {;
+        for (var i = 0; i < this.cubes.length; ++i) {
+            ;
             GL.deleteBuffer(this.cubes[i].vertex_buffer);
             GL.deleteBuffer(this.cubes[i].faces_buffer);
             GL.deleteBuffer(this.cubes[i].texture.buffer);
