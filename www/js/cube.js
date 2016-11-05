@@ -56,13 +56,14 @@ var CUBE = {
         return vertices;
     },
     createCube: function (GL, dimension) {
-        this.releaseCubes();
-        var partSize = 2 / dimension;
+        this.releaseCubes(GL);
+        var partSize = 2.0 / dimension;
         var offset = 0.1 * partSize;
         partSize -= offset;
-        for (var x = -1; x < 1; x += (partSize + offset)) {
-            for (var y = 1; y > -1; y -= (partSize + offset)) {
-                for (var z = 1; z > -1; z -= (partSize + offset)) {
+        console.log(partSize);
+        for (var x = -1; x + partSize < 1; x += (partSize + offset)) {
+            for (var y = 1; y - partSize> -1; y -= (partSize + offset)) {
+                for (var z = 1; z - partSize> -1; z -= (partSize + offset)) {
                     var squareObject = {};
                     squareObject.vertexes = this.getSquareVertexes(x, y, z, partSize);
                     squareObject.faces = this.getSquareFaces();
@@ -78,8 +79,14 @@ var CUBE = {
             }
         }
     },
-    releaseCubes: function() {
-
+    releaseCubes: function (GL) {
+        for (var i = 0; i < this.cubes.length; ++i) {;
+            GL.deleteBuffer(this.cubes[i].vertex_buffer);
+            GL.deleteBuffer(this.cubes[i].faces_buffer);
+            GL.deleteBuffer(this.cubes[i].texture.buffer);
+            GL.deleteTexture(this.cubes[i].texture.texture);
+        }
+        this.cubes = [];
     },
     getTextureCoords: function () {
         var textureCoordinates = [

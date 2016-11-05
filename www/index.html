@@ -38,7 +38,7 @@
         </div>
         <div class="ui-property-box">
             <b>Cube dimension:</b><span id="cubeDimensionLabel"></span></span><br/>
-            <input type="range" id="cubeDimension" onchange="onSquaresNumberInputChange()" min="1" max="16"
+            <input type="range" id="cubeDimension" onchange="onSquaresNumberInputChange()" min="1" max="6"
                    step="1" value="2"><br/>
         </div>
         <div class="ui-property-box">
@@ -67,7 +67,7 @@
     uniform mat4 u_translation;
     uniform mat4 u_scale;
     void main(void) {
-        gl_Position = Pmatrix*Vmatrix*MmatrixX*MmatrixY*MmatrixZ*u_translation*u_scale*vec4(position, 1.);
+        gl_Position = Pmatrix*Vmatrix*u_translation*MmatrixX*MmatrixY*MmatrixZ*u_scale*vec4(position, 1.);
         tex_coords = a_tex_coords;
     }
 

@@ -34,7 +34,6 @@ function initLogger() {
 function initWebGL() {
     initLogger();
     canvas = document.getElementById('glCanvas');
-    initMouseEvents();
     initConvultionComboBox();
     try {
         GL = canvas.getContext('webgl', {antialias: true}) || canvas.getContext('web-gl-academy-context', {antialias: true});
@@ -68,27 +67,34 @@ function initWebGL() {
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
     changeConvultionKernel('normal');
+    var lastUpdate = 0;
+    var updateTime = 1000 / 25;
+    var now = null;
     var animate = function () {
-        GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
-        for (var i = 0; i < CUBE.cubes.length; ++i) {
-            GL.bindBuffer(GL.ARRAY_BUFFER, CUBE.cubes[i].vertex_buffer);
-            GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false, 0, 0);
+        now = new Date().getTime();
+        if (now - lastUpdate > updateTime) {
+            lastUpdate = now;
+            GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
+            for (var i = 0; i < CUBE.cubes.length; ++i) {
+                GL.bindBuffer(GL.ARRAY_BUFFER, CUBE.cubes[i].vertex_buffer);
+                GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false, 0, 0);
 
-            GL.bindBuffer(GL.ARRAY_BUFFER, CUBE.cubes[i].texture.buffer);
-            GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false, 0, 0);
+                GL.bindBuffer(GL.ARRAY_BUFFER, CUBE.cubes[i].texture.buffer);
+                GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false, 0, 0);
 
-            GL.activeTexture(GL.TEXTURE0);
-            GL.bindTexture(GL.TEXTURE_2D, CUBE.cubes[i].texture.texture);
-            GL.uniform1i(shader_ptr._u_image, 0);
+                GL.activeTexture(GL.TEXTURE0);
+                GL.bindTexture(GL.TEXTURE_2D, CUBE.cubes[i].texture.texture);
+                GL.uniform1i(shader_ptr._u_image, 0);
 
-            GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, CUBE.cubes[i].faces_buffer);
-            GL.uniformMatrix4fv(shader_ptr._MmatrixX, false, ROTATION_X);
-            GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, ROTATION_Y);
-            GL.uniformMatrix4fv(shader_ptr._MmatrixZ, false, ROTATION_Z);
-            GL.uniform2f(shader_ptr._textureSize, CUBE.cubes[i].size, CUBE.cubes[i].size);
-            GL.drawElements(GL.TRIANGLES, CUBE.cubes[i].faces.length, GL.UNSIGNED_SHORT, 0);
+                GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, CUBE.cubes[i].faces_buffer);
+                GL.uniformMatrix4fv(shader_ptr._MmatrixX, false, ROTATION_X);
+                GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, ROTATION_Y);
+                GL.uniformMatrix4fv(shader_ptr._MmatrixZ, false, ROTATION_Z);
+                GL.uniform2f(shader_ptr._textureSize, CUBE.cubes[i].size, CUBE.cubes[i].size);
+                GL.drawElements(GL.TRIANGLES, CUBE.cubes[i].faces.length, GL.UNSIGNED_SHORT, 0);
+            }
+            GL.flush();
         }
-        GL.flush();
         window.requestAnimationFrame(animate);
     };
     image = new Image();
@@ -142,10 +148,10 @@ function onScaleInputChange() {
 }
 
 function onSquaresNumberInputChange() {
-    var numberOfSquares = parseInt(document.getElementById('cubeDimension').value);
-    CUBE.createCube(numberOfSquares);
-    CUBE.setTextures(image);
-    document.getElementById('cubeDimensionLabel').innerHTML = numberOfSquares;
+    var numberOfCubes = parseInt(document.getElementById('cubeDimension').value);
+    CUBE.createCube(GL, numberOfCubes);
+    CUBE.setTextures(GL, image);
+    document.getElementById('cubeDimensionLabel').innerHTML = numberOfCubes;
 }
 
 function onRotationInputChange(coordinate) {
