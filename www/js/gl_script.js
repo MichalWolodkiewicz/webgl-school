@@ -131,10 +131,10 @@ function getSquareVertexes(leftX, topY, frontFaceZ, size) {
         leftX, topY, frontFaceZ,
 
         // Back face
+        rightX, bottomY, backFaceZ,
         leftX, bottomY, backFaceZ,
         leftX, topY, backFaceZ,
         rightX, topY, backFaceZ,
-        rightX, bottomY, backFaceZ,
 
         // Top face
         leftX, topY, backFaceZ,
@@ -150,9 +150,9 @@ function getSquareVertexes(leftX, topY, frontFaceZ, size) {
 
         // Right face
         rightX, bottomY, backFaceZ,
-        rightX, topY, backFaceZ,
-        rightX, topY, frontFaceZ,
         rightX, bottomY, frontFaceZ,
+        rightX, topY, frontFaceZ,
+        rightX, topY, backFaceZ,
 
         // Left face
         leftX, bottomY, backFaceZ,

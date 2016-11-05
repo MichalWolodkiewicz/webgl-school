@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b023404f-050d-4c48-9247-320e9e122a8f" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/www/index.html" afterPath="$PROJECT_DIR$/www/index.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/www/js/gl_script.js" afterPath="$PROJECT_DIR$/www/js/gl_script.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/www/js/libs.js" afterPath="$PROJECT_DIR$/www/js/libs.js" />
     </list>
     <ignored path="webGLAcademy.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -51,20 +50,20 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="gl_script.js" pinned="false" current-in-tab="false">
+      <file leaf-file-name="gl_script.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/www/js/gl_script.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="271">
-              <caret line="403" column="20" selection-start-line="403" selection-start-column="20" selection-end-line="403" selection-end-column="20" />
+            <state relative-caret-position="170">
+              <caret line="153" column="33" selection-start-line="153" selection-start-column="33" selection-end-line="153" selection-end-column="33" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="libs.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="libs.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/www/js/libs.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="420">
+            <state relative-caret-position="2000">
               <caret line="80" column="13" selection-start-line="80" selection-start-column="13" selection-end-line="80" selection-end-column="13" />
               <folding />
             </state>
@@ -103,8 +102,8 @@
         <option value="$PROJECT_DIR$/www/gl_script.js" />
         <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/www/index.html" />
-        <option value="$PROJECT_DIR$/www/js/gl_script.js" />
         <option value="$PROJECT_DIR$/www/js/libs.js" />
+        <option value="$PROJECT_DIR$/www/js/gl_script.js" />
       </list>
     </option>
   </component>
@@ -721,12 +720,12 @@
       <workItem from="1478199740941" duration="6208000" />
       <workItem from="1478245614567" duration="726000" />
       <workItem from="1478273152755" duration="4266000" />
-      <workItem from="1478350272228" duration="3728000" />
+      <workItem from="1478350272228" duration="4584000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="78241000" />
+    <option name="totallyTimeSpent" value="79097000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
@@ -1228,18 +1227,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/www/js/gl_script.js">
+    <entry file="file://$PROJECT_DIR$/www/js/libs.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="271">
-          <caret line="403" column="20" selection-start-line="403" selection-start-column="20" selection-end-line="403" selection-end-column="20" />
+        <state relative-caret-position="2000">
+          <caret line="80" column="13" selection-start-line="80" selection-start-column="13" selection-end-line="80" selection-end-column="13" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/www/js/libs.js">
+    <entry file="file://$PROJECT_DIR$/www/js/gl_script.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="420">
-          <caret line="80" column="13" selection-start-line="80" selection-start-column="13" selection-end-line="80" selection-end-column="13" />
+        <state relative-caret-position="170">
+          <caret line="153" column="33" selection-start-line="153" selection-start-column="33" selection-end-line="153" selection-end-column="33" />
           <folding />
         </state>
       </provider>
