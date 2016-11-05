@@ -22,9 +22,9 @@
             X<input type="range" id="translation_x" oninput="onTranslationInputChange('x')" min="-150" max="150"
                     step="1"><br/>
             Y<input type="range" id="translation_y" oninput="onTranslationInputChange('y')" min="-150" max="150"
-                    step="0.2"><br/>
+                    step="1"><br/>
             Z<input type="range" id="translation_z" oninput="onTranslationInputChange('z')" min="-150" max="150"
-                    step="0.2"><br/>
+                    step="1"><br/>
         </div>
         <div id="kernelFilter" class="ui-property-box">
             <b>Kernel filter:</b><br/>
@@ -32,7 +32,12 @@
         <div class="ui-property-box">
             <b>Scale:</b><br/>
             <input type="range" id="scaleInput" oninput="onScaleInputChange()" min="1" max="200"
-                   step="0.2"><br/>
+                   step="1"><br/>
+        </div>
+        <div class="ui-property-box">
+            <b>Number of squares:</b><span id="numberOfSquaresLabel"></span></span><br/>
+            <input type="range" id="squaresNumber" onchange="onSquaresNumberInputChange()" min="1" max="16"
+                   step="1"><br/>
         </div>
     </div>
     <div style="float:right;width:75%">
@@ -47,9 +52,9 @@
     uniform mat4 Vmatrix;
     uniform mat4 MmatrixY;
     uniform vec3 u_translation;
-    uniform float u_scale;
+    uniform mat4 u_scale;
     void main(void) {
-        gl_Position = Pmatrix*Vmatrix*MmatrixY*(vec4(position, 1.)*vec4(u_scale,u_scale,u_scale,1)+vec4(u_translation, 0.0));
+        gl_Position = Pmatrix*Vmatrix*MmatrixY*u_scale*(vec4(position, 1.)+vec4(u_translation, 0.0));
         tex_coords = a_tex_coords;
     }
 </script>

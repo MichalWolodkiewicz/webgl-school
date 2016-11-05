@@ -10,6 +10,8 @@ var translation = {
     y:0.0,
     z:0.0
 };
+var SCALE_MATRIX = LIBS.get_I4();
+var image;
 
 function initShaderVariablesPointer(program) {
     shader_ptr._MmatrixY = GL.getUniformLocation(program, "MmatrixY");
@@ -119,7 +121,6 @@ function getSquareFaces() {
 }
 
 function getSquareVertexes(leftX, topY,size) {
-    console.log(leftX+"   "+topY+"   "+size);
     var rightX = leftX + size;
     var bottomY = topY - size;
     var vertices = [
@@ -197,6 +198,7 @@ function initWebGL() {
     LIBS.translateZ(VIEWMATRIX, -4);
     GL.uniformMatrix4fv(shader_ptr._Pmatrix, false, PROJMATRIX);
     GL.uniformMatrix4fv(shader_ptr._Vmatrix, false, VIEWMATRIX);
+    GL.uniformMatrix4fv(shader_ptr._scale, false, SCALE_MATRIX);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
@@ -224,13 +226,12 @@ function initWebGL() {
             GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, MOVEMATRIX_Y);
             GL.uniform2f(shader_ptr._textureSize, squares[i].size, squares[i].size);
             GL.uniform3f(shader_ptr._translation, translation.x, translation.y, translation.z);
-            GL.uniform1f(shader_ptr._scale, scaleRatio);
             GL.drawElements(GL.TRIANGLES, squares[i].faces.length, GL.UNSIGNED_SHORT, 0);
         }
         GL.flush();
         window.requestAnimationFrame(animate);
     };
-    var image = new Image();
+    image = new Image();
     image.src = "img/dev.png";
     image.onload = function () {
         setTextures(image);
@@ -404,5 +405,13 @@ function onTranslationInputChange(coordinate) {
 function onScaleInputChange() {
     var value = parseInt(document.getElementById('scaleInput').value);
     scaleRatio = value/100.0;
-    console.log(scaleRatio);
+    LIBS.setScaleToMatrix(SCALE_MATRIX, scaleRatio);
+    GL.uniformMatrix4fv(shader_ptr._scale, false, SCALE_MATRIX);
+}
+
+function onSquaresNumberInputChange() {
+    var numberOfSquares = parseInt(document.getElementById('squaresNumber').value);
+    squares = createSquares(numberOfSquares);
+    setTextures(image);
+    document.getElementById('numberOfSquaresLabel').innerHTML = numberOfSquares;
 }

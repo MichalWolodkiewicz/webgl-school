@@ -71,6 +71,12 @@ const LIBS = {
 
     translateZ: function(m, t){
         m[14]+=t;
+    },
+
+    setScaleToMatrix: function(matrix, scale) {
+        matrix[0] = scale;
+        matrix[5] = scale;
+        matrix[10] = scale;
     }
 
 };
