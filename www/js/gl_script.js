@@ -5,12 +5,8 @@ var canvas;
 var theta = 0;
 var shader_ptr = {};
 var scaleRatio = 1.0;
-var translation = {
-    x: 0.0,
-    y: 0.0,
-    z: 0.0
-};
 var SCALE_MATRIX = LIBS.get_I4();
+var TRANSLATION_MATRIX = LIBS.get_I4();
 var image;
 
 function initShaderVariablesPointer(program) {
@@ -199,10 +195,12 @@ function initWebGL() {
     var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
     var MOVEMATRIX_Y = LIBS.get_I4();
     var VIEWMATRIX = LIBS.get_I4();
+    var TRANSLATION_MATRIX = LIBS.get_I4();
     LIBS.translateZ(VIEWMATRIX, -4);
     GL.uniformMatrix4fv(shader_ptr._Pmatrix, false, PROJMATRIX);
     GL.uniformMatrix4fv(shader_ptr._Vmatrix, false, VIEWMATRIX);
     GL.uniformMatrix4fv(shader_ptr._scale, false, SCALE_MATRIX);
+    GL.uniformMatrix4fv(shader_ptr._translation, false, TRANSLATION_MATRIX);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
@@ -229,7 +227,6 @@ function initWebGL() {
             GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, cube[i].faces_buffer);
             GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, MOVEMATRIX_Y);
             GL.uniform2f(shader_ptr._textureSize, cube[i].size, cube[i].size);
-            GL.uniform3f(shader_ptr._translation, translation.x, translation.y, translation.z);
             GL.drawElements(GL.TRIANGLES, cube[i].faces.length, GL.UNSIGNED_SHORT, 0);
         }
         GL.flush();
@@ -402,8 +399,15 @@ function initConvultionComboBox() {
 }
 
 function onTranslationInputChange(coordinate) {
-    var value = parseInt(document.getElementById('translation_' + coordinate).value);
-    translation[coordinate] = value / 100.0;
+    var value = parseInt(document.getElementById('translation_' + coordinate).value)/100.0;
+    if (coordinate == 'x') {
+        LIBS.translateX(TRANSLATION_MATRIX, value);
+    } else if (coordinate == 'y') {
+        LIBS.translateY(TRANSLATION_MATRIX, value);
+    } else if (coordinate == 'z') {
+        LIBS.translateZ(TRANSLATION_MATRIX, value);
+    }
+    GL.uniformMatrix4fv(shader_ptr._translation, false, TRANSLATION_MATRIX);
 }
 
 function onScaleInputChange() {

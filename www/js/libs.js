@@ -69,8 +69,16 @@ const LIBS = {
         m[9]=c*m[9]+s*mv8;
     },
 
+    translateX: function(m, t){
+        m[12]=t;
+    },
+
+    translateY: function(m, t){
+        m[13]=t;
+    },
+
     translateZ: function(m, t){
-        m[14]+=t;
+        m[14]=t;
     },
 
     setScaleToMatrix: function(matrix, scale) {
