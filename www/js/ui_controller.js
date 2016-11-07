@@ -1,7 +1,6 @@
 var GL;
 var logBox;
 var canvas;
-var theta = 0;
 var shader_ptr = {};
 var scaleRatio = 1.0;
 var SCALE_MATRIX = LIBS.get_I4();
@@ -10,6 +9,13 @@ var image;
 var ROTATION_X = LIBS.get_I4();
 var ROTATION_Y = LIBS.get_I4();
 var ROTATION_Z = LIBS.get_I4();
+
+var projection = {
+    angle: 40,
+    aspect : 1,
+    zMin: 1,
+    zMax: 100
+};
 
 function initShaderVariablesPointer(program) {
     shader_ptr._MmatrixX = GL.getUniformLocation(program, "MmatrixX");
@@ -36,6 +42,7 @@ function initLogger() {
 function initWebGL() {
     initLogger();
     canvas = document.getElementById('glCanvas');
+    projection.aspect = canvas.width / canvas.height;
     initConvultionComboBox();
     try {
         GL = canvas.getContext('webgl', {antialias: true}) || canvas.getContext('web-gl-academy-context', {antialias: true});
@@ -58,7 +65,7 @@ function initWebGL() {
     GL.useProgram(program);
     initShaderVariablesPointer(program);
     CUBE.createCube(GL, 2);
-    var PROJMATRIX = LIBS.get_projection(40, canvas.width / canvas.height, 1, 100);
+    var PROJMATRIX = LIBS.get_projection(projection.angle, projection.aspect, projection.zMin, projection.zMax);
     var VIEWMATRIX = LIBS.get_I4();
     var TRANSLATION_MATRIX = LIBS.get_I4();
     var TRANSLATION_SRC_MATRIX = LIBS.get_I4();
@@ -176,4 +183,12 @@ function onRotationInputChange(coordinate) {
     } else if (coordinate == 'z') {
         LIBS.rotateZ(ROTATION_Z, LIBS.degToRad(value));
     }
+}
+
+function onProjectionAngleChange() {
+    var value = parseInt(document.getElementById('projectionAngle').value);
+    projection.angle = value;
+    PROJMATRIX = LIBS.get_projection(projection.angle, projection.aspect, projection.zMin, projection.zMax);
+    GL.uniformMatrix4fv(shader_ptr._Pmatrix, false, PROJMATRIX);
+    document.getElementById('projectionAngleValueLabel').innerHTML = value;
 }

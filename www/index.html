@@ -50,6 +50,11 @@
             Z<input type="range" id="rotation_z" oninput="onRotationInputChange('z')" min="0" max="360"
                     step="1" value="0"><br/>
         </div>
+        <div class="ui-property-box">
+            <b>Projection:</b><br/>
+            angle<input type="range" id="projectionAngle" oninput="onProjectionAngleChange()" min="0" max="360"
+                    step="1" value="40"><span id="projectionAngleValueLabel">40</span> <br/>
+        </div>
     </div>
     <div style="float:right;width:75%">
         <canvas width="600px" height="600px" id="glCanvas"></canvas>
