@@ -3,36 +3,35 @@ var logBox;
 var canvas;
 var shader_ptr = {};
 var scaleRatio = 1.0;
-var SCALE_MATRIX = LIBS.get_I4();
-var TRANSLATION_MATRIX = LIBS.get_I4();
 var image;
-var ROTATION_X = LIBS.get_I4();
-var ROTATION_Y = LIBS.get_I4();
-var ROTATION_Z = LIBS.get_I4();
 
-var projection = {
-    angle: 40,
+var perspective = {
+    angle: 60,
     aspect : 1,
-    zMin: 1,
-    zMax: 100
+    zMin: 0.1,
+    zMax: 2000
+};
+
+var translation = {
+    x:0,
+    y:0,
+    z:0
+};
+
+var rotation = {
+    x:0,
+    y:0,
+    z:0
 };
 
 function initShaderVariablesPointer(program) {
-    shader_ptr._MmatrixX = GL.getUniformLocation(program, "MmatrixX");
-    shader_ptr._MmatrixY = GL.getUniformLocation(program, "MmatrixY");
-    shader_ptr._MmatrixZ = GL.getUniformLocation(program, "MmatrixZ");
-    shader_ptr._Vmatrix = GL.getUniformLocation(program, "Vmatrix");
-    shader_ptr._Pmatrix = GL.getUniformLocation(program, "Pmatrix");
+    shader_ptr._u_matrix = GL.getUniformLocation(program, "u_matrix");
     shader_ptr._position = GL.getAttribLocation(program, 'position');
     shader_ptr._texCoords = GL.getAttribLocation(program, 'a_tex_coords');
     shader_ptr._u_image = GL.getUniformLocation(program, "u_image");
     shader_ptr._kernel = GL.getUniformLocation(program, "u_kernel[0]");
     shader_ptr._kernelWeight = GL.getUniformLocation(program, "u_kernelWeight");
     shader_ptr._textureSize = GL.getUniformLocation(program, "u_textureSize");
-    shader_ptr._translation = GL.getUniformLocation(program, "u_translation");
-    shader_ptr._origin_translation = GL.getUniformLocation(program, "u_origin_translation");
-    shader_ptr._src_translation = GL.getUniformLocation(program, "u_src_translation");
-    shader_ptr._scale = GL.getUniformLocation(program, "u_scale");
 }
 
 function initLogger() {
@@ -42,7 +41,7 @@ function initLogger() {
 function initWebGL() {
     initLogger();
     canvas = document.getElementById('glCanvas');
-    projection.aspect = canvas.width / canvas.height;
+    perspective.aspect = canvas.width / canvas.height;
     initConvultionComboBox();
     try {
         GL = canvas.getContext('webgl', {antialias: true}) || canvas.getContext('web-gl-academy-context', {antialias: true});
@@ -65,16 +64,6 @@ function initWebGL() {
     GL.useProgram(program);
     initShaderVariablesPointer(program);
     CUBE.createCube(GL, 2);
-    var PROJMATRIX = LIBS.get_projection(projection.angle, projection.aspect, projection.zMin, projection.zMax);
-    var VIEWMATRIX = LIBS.get_I4();
-    var TRANSLATION_MATRIX = LIBS.get_I4();
-    var TRANSLATION_SRC_MATRIX = LIBS.get_I4();
-    var TRANSLATION_ORIGIN_MATRIX = LIBS.get_I4();
-    LIBS.translateZ(VIEWMATRIX, -4);
-    GL.uniformMatrix4fv(shader_ptr._Pmatrix, false, PROJMATRIX);
-    GL.uniformMatrix4fv(shader_ptr._Vmatrix, false, VIEWMATRIX);
-    GL.uniformMatrix4fv(shader_ptr._scale, false, SCALE_MATRIX);
-    GL.uniformMatrix4fv(shader_ptr._translation, false, TRANSLATION_MATRIX);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
@@ -87,31 +76,9 @@ function initWebGL() {
         if (now - lastUpdate > updateTime) {
             lastUpdate = now;
             GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
+            var matrix = getCubeMatrix();
             for (var i = 0; i < CUBE.cubes.length; ++i) {
-                GL.bindBuffer(GL.ARRAY_BUFFER, CUBE.cubes[i].vertex_buffer);
-                GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false, 0, 0);
-
-                GL.bindBuffer(GL.ARRAY_BUFFER, CUBE.cubes[i].texture.buffer);
-                GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false, 0, 0);
-
-                GL.activeTexture(GL.TEXTURE0);
-                GL.bindTexture(GL.TEXTURE_2D, CUBE.cubes[i].texture.texture);
-                GL.uniform1i(shader_ptr._u_image, 0);
-
-                GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, CUBE.cubes[i].faces_buffer);
-                GL.uniformMatrix4fv(shader_ptr._MmatrixX, false, ROTATION_X);
-                GL.uniformMatrix4fv(shader_ptr._MmatrixY, false, ROTATION_Y);
-                GL.uniformMatrix4fv(shader_ptr._MmatrixZ, false, ROTATION_Z);
-                GL.uniform2f(shader_ptr._textureSize, CUBE.cubes[i].size, CUBE.cubes[i].size);
-                LIBS.translateX(TRANSLATION_SRC_MATRIX, CUBE.cubes[i].center.x);
-                LIBS.translateY(TRANSLATION_SRC_MATRIX, CUBE.cubes[i].center.y);
-                LIBS.translateZ(TRANSLATION_SRC_MATRIX, CUBE.cubes[i].center.z);
-                LIBS.translateX(TRANSLATION_ORIGIN_MATRIX, -CUBE.cubes[i].center.x);
-                LIBS.translateY(TRANSLATION_ORIGIN_MATRIX, -CUBE.cubes[i].center.y);
-                LIBS.translateZ(TRANSLATION_ORIGIN_MATRIX, -CUBE.cubes[i].center.z);
-                GL.uniformMatrix4fv(shader_ptr._src_translation, false, TRANSLATION_SRC_MATRIX);
-                GL.uniformMatrix4fv(shader_ptr._origin_translation, false, TRANSLATION_ORIGIN_MATRIX);
-                GL.drawElements(GL.TRIANGLES, CUBE.cubes[i].faces.length, GL.UNSIGNED_SHORT, 0);
+                drawSmallCube(CUBE.cubes[i], matrix);
             }
             GL.flush();
         }
@@ -124,6 +91,33 @@ function initWebGL() {
         animate();
     }
     return true;
+}
+
+function drawSmallCube(cube, cubeMatrix) {
+    GL.bindBuffer(GL.ARRAY_BUFFER, cube.vertex_buffer);
+    GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false, 0, 0);
+
+    GL.bindBuffer(GL.ARRAY_BUFFER, cube.texture.buffer);
+    GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false, 0, 0);
+
+    GL.activeTexture(GL.TEXTURE0);
+    GL.bindTexture(GL.TEXTURE_2D, cube.texture.texture);
+    GL.uniform1i(shader_ptr._u_image, 0);
+
+    GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, cube.faces_buffer);
+    GL.uniformMatrix4fv(shader_ptr._u_matrix, false, cubeMatrix);
+    GL.uniform2f(shader_ptr._textureSize, cube.size, cube.size);
+    GL.drawElements(GL.TRIANGLES, cube.faces.length, GL.UNSIGNED_SHORT, 0);
+}
+
+function getCubeMatrix() {
+    var matrix = LIBS.m4Perspective(LIBS.degToRad(perspective.angle), perspective.aspect, perspective.zMin, perspective.zMax);
+    matrix = LIBS.translate(matrix, translation.x, translation.y, translation.z);
+    matrix = LIBS.xRotate(matrix, rotation.x);
+    matrix = LIBS.yRotate(matrix, rotation.y);
+    matrix = LIBS.zRotate(matrix, rotation.z);
+    matrix = LIBS.scale(matrix, scaleRatio, scaleRatio, scaleRatio);
+    return matrix;
 }
 
 function changeConvultionKernel(value) {
@@ -150,21 +144,12 @@ function initConvultionComboBox() {
 
 function onTranslationInputChange(coordinate) {
     var value = parseInt(document.getElementById('translation_' + coordinate).value) / 100.0;
-    if (coordinate == 'x') {
-        LIBS.translateX(TRANSLATION_MATRIX, value);
-    } else if (coordinate == 'y') {
-        LIBS.translateY(TRANSLATION_MATRIX, value);
-    } else if (coordinate == 'z') {
-        LIBS.translateZ(TRANSLATION_MATRIX, value);
-    }
-    GL.uniformMatrix4fv(shader_ptr._translation, false, TRANSLATION_MATRIX);
+    translation[coordinate] = value;
 }
 
 function onScaleInputChange() {
     var value = parseInt(document.getElementById('scaleInput').value);
     scaleRatio = value / 100.0;
-    LIBS.setScaleToMatrix(SCALE_MATRIX, scaleRatio);
-    GL.uniformMatrix4fv(shader_ptr._scale, false, SCALE_MATRIX);
 }
 
 function onSquaresNumberInputChange() {
@@ -176,19 +161,34 @@ function onSquaresNumberInputChange() {
 
 function onRotationInputChange(coordinate) {
     var value = parseInt(document.getElementById('rotation_' + coordinate).value);
-    if (coordinate == 'x') {
-        LIBS.rotateX(ROTATION_X, LIBS.degToRad(value));
-    } else if (coordinate == 'y') {
-        LIBS.rotateY(ROTATION_Y, LIBS.degToRad(value));
-    } else if (coordinate == 'z') {
-        LIBS.rotateZ(ROTATION_Z, LIBS.degToRad(value));
-    }
+    rotation[coordinate] = LIBS.degToRad(value);
 }
 
 function onProjectionAngleChange() {
     var value = parseInt(document.getElementById('projectionAngle').value);
-    projection.angle = value;
-    PROJMATRIX = LIBS.get_projection(projection.angle, projection.aspect, projection.zMin, projection.zMax);
-    GL.uniformMatrix4fv(shader_ptr._Pmatrix, false, PROJMATRIX);
+    perspective.angle = value;
     document.getElementById('projectionAngleValueLabel').innerHTML = value;
+}
+
+function onCameraAngleChange(coordinate) {
+    var value = parseInt(document.getElementById('cameraRotation_'+coordinate).value);
+    if (coordinate == 'x') {
+        LIBS.rotateX(VIEWMATRIX, LIBS.degToRad(value));
+    } else if (coordinate == 'y') {
+        LIBS.rotateY(VIEWMATRIX, LIBS.degToRad(value));
+    } else if (coordinate == 'z') {
+        LIBS.rotateZ(VIEWMATRIX, LIBS.degToRad(value));
+    }
+    GL.uniformMatrix4fv(shader_ptr._Vmatrix, false, VIEWMATRIX);
+    document.getElementById('cameraRotationLabel_'+coordinate).innerHTML = value;
+}
+
+function onPerspectiveZMinChange() {
+    perspective.zMin = parseInt(document.getElementById('perspectiveZMin').value)/10.0;
+    document.getElementById('perspectiveZMinValueLabel').innerHTML = perspective.zMin;
+}
+
+function onPerspectiveZMaxChange() {
+    perspective.zMax = parseInt(document.getElementById('perspectiveZMax').value);
+    document.getElementById('perspectiveZMaxValueLabel').innerHTML = perspective.zMax;
 }
