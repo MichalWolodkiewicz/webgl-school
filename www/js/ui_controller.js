@@ -28,7 +28,7 @@ var camera = {
     translation: {
         x: 0,
         y: 0,
-        z: 0
+        z: 2
     },
     rotation: {
         x: 0,
@@ -78,7 +78,7 @@ function initWebGL() {
     var program = glUtils.createProgram(GL, 'shader-vs', 'shader-convultion-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
-    CUBE.createCube(GL, 2, -1, 1, -5);
+    CUBE.createCube(GL, 2, -0.5, 0.5, 0.5, 1);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
@@ -138,10 +138,10 @@ function getCubeMatrix() {
 
 function getCameraMatrix() {
     LIBS.set_I4(CAMERA_MATRIX);
-    CAMERA_MATRIX = LIBS.translate(CAMERA_MATRIX, camera.translation.x, camera.translation.y, camera.translation.z);
     CAMERA_MATRIX = LIBS.xRotate(CAMERA_MATRIX, camera.rotation.x);
     CAMERA_MATRIX = LIBS.yRotate(CAMERA_MATRIX, camera.rotation.y);
     CAMERA_MATRIX = LIBS.zRotate(CAMERA_MATRIX, camera.rotation.z);
+    CAMERA_MATRIX = LIBS.translate(CAMERA_MATRIX, camera.translation.x, camera.translation.y, camera.translation.z);
     return LIBS.inverse(CAMERA_MATRIX);
 }
 
@@ -179,7 +179,7 @@ function onScaleInputChange() {
 
 function onSquaresNumberInputChange() {
     var numberOfCubes = parseInt(document.getElementById('cubeDimension').value);
-    CUBE.createCube(GL, numberOfCubes, -1, 1, -5);
+    CUBE.createCube(GL, numberOfCubes, -0.5, 0.5, 0.5, 1);
     CUBE.setTextures(GL, image);
     document.getElementById('cubeDimensionLabel').innerHTML = numberOfCubes;
 }
