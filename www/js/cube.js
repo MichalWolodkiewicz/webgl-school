@@ -55,15 +55,14 @@ var CUBE = {
         ];
         return vertices;
     },
-    createCube: function (GL, dimension) {
+    createCube: function (GL, dimension, startX, startY, startZ) {
         this.releaseCubes(GL);
         var partSize = 2.0 / dimension;
         var offset = 0.1 * partSize;
         partSize -= offset;
-        console.log(partSize);
-        for (var x = -1; x + partSize < 1; x += (partSize + offset)) {
-            for (var y = 1; y - partSize > -1; y -= (partSize + offset)) {
-                for (var z = 1; z - partSize > -1; z -= (partSize + offset)) {
+        for (var x = startX; x + partSize < startX+2; x += (partSize + offset)) {
+            for (var y = startY; y - partSize > startY-2; y -= (partSize + offset)) {
+                for (var z = startZ; z - partSize > startZ-2; z -= (partSize + offset)) {
                     var squareObject = {};
                     squareObject.vertexes = this.getSquareVertexes(x, y, z, partSize);
                     squareObject.faces = this.getSquareFaces();

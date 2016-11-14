@@ -7,22 +7,37 @@ var image;
 
 var perspective = {
     angle: 60,
-    aspect : 1,
+    aspect: 1,
     zMin: 0.1,
-    zMax: 2
+    zMax: 100
 };
 
 var translation = {
-    x:0,
-    y:0,
-    z:0
+    x: 0,
+    y: 0,
+    z: 0
 };
 
 var rotation = {
-    x:0,
-    y:0,
-    z:0
+    x: 0,
+    y: 0,
+    z: 0
 };
+
+var camera = {
+    translation: {
+        x: 0,
+        y: 0,
+        z: 0
+    },
+    rotation: {
+        x: 0,
+        y: 0,
+        z: 0
+    }
+};
+
+var CAMERA_MATRIX = LIBS.get_I4();
 
 function initShaderVariablesPointer(program) {
     shader_ptr._u_matrix = GL.getUniformLocation(program, "u_matrix");
@@ -63,7 +78,7 @@ function initWebGL() {
     var program = glUtils.createProgram(GL, 'shader-vs', 'shader-convultion-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
-    CUBE.createCube(GL, 2);
+    CUBE.createCube(GL, 2, -1, 1, -5);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
@@ -112,12 +127,22 @@ function drawSmallCube(cube, cubeMatrix) {
 
 function getCubeMatrix() {
     var matrix = LIBS.m4Perspective(LIBS.degToRad(perspective.angle), perspective.aspect, perspective.zMin, perspective.zMax);
+    matrix = LIBS.multiply(matrix, getCameraMatrix());
     matrix = LIBS.translate(matrix, translation.x, translation.y, translation.z);
     matrix = LIBS.xRotate(matrix, rotation.x);
     matrix = LIBS.yRotate(matrix, rotation.y);
     matrix = LIBS.zRotate(matrix, rotation.z);
     matrix = LIBS.scale(matrix, scaleRatio, scaleRatio, scaleRatio);
     return matrix;
+}
+
+function getCameraMatrix() {
+    LIBS.set_I4(CAMERA_MATRIX);
+    CAMERA_MATRIX = LIBS.translate(CAMERA_MATRIX, camera.translation.x, camera.translation.y, camera.translation.z);
+    CAMERA_MATRIX = LIBS.xRotate(CAMERA_MATRIX, camera.rotation.x);
+    CAMERA_MATRIX = LIBS.yRotate(CAMERA_MATRIX, camera.rotation.y);
+    CAMERA_MATRIX = LIBS.zRotate(CAMERA_MATRIX, camera.rotation.z);
+    return LIBS.inverse(CAMERA_MATRIX);
 }
 
 function changeConvultionKernel(value) {
@@ -154,7 +179,7 @@ function onScaleInputChange() {
 
 function onSquaresNumberInputChange() {
     var numberOfCubes = parseInt(document.getElementById('cubeDimension').value);
-    CUBE.createCube(GL, numberOfCubes);
+    CUBE.createCube(GL, numberOfCubes, -1, 1, -5);
     CUBE.setTextures(GL, image);
     document.getElementById('cubeDimensionLabel').innerHTML = numberOfCubes;
 }
@@ -171,24 +196,35 @@ function onProjectionAngleChange() {
 }
 
 function onCameraAngleChange(coordinate) {
-    var value = parseInt(document.getElementById('cameraRotation_'+coordinate).value);
+    var value = parseInt(document.getElementById('cameraRotation_' + coordinate).value);
     if (coordinate == 'x') {
-        LIBS.rotateX(VIEWMATRIX, LIBS.degToRad(value));
+        camera.rotation.x = LIBS.degToRad(value);
     } else if (coordinate == 'y') {
-        LIBS.rotateY(VIEWMATRIX, LIBS.degToRad(value));
+        camera.rotation.y = LIBS.degToRad(value);
     } else if (coordinate == 'z') {
-        LIBS.rotateZ(VIEWMATRIX, LIBS.degToRad(value));
+        camera.rotation.z = LIBS.degToRad(value);
     }
-    GL.uniformMatrix4fv(shader_ptr._Vmatrix, false, VIEWMATRIX);
-    document.getElementById('cameraRotationLabel_'+coordinate).innerHTML = value;
+    document.getElementById('cameraRotationLabel_' + coordinate).innerHTML = value;
+}
+
+function onCameraTranslationChange(coordinate) {
+    var value = parseInt(document.getElementById('cameraTranslation_' + coordinate).value)/10.0;
+    if (coordinate == 'x') {
+        camera.translation.x = value;
+    } else if (coordinate == 'y') {
+        camera.translation.y = value;
+    } else if (coordinate == 'z') {
+        camera.translation.z = value;
+    }
+    document.getElementById('cameraTranslationLabel_' + coordinate).innerHTML = value;
 }
 
 function onPerspectiveZMinChange() {
-    perspective.zMin = parseInt(document.getElementById('perspectiveZMin').value)/10.0;
+    perspective.zMin = parseInt(document.getElementById('perspectiveZMin').value) / 10.0;
     document.getElementById('perspectiveZMinValueLabel').innerHTML = perspective.zMin;
 }
 
 function onPerspectiveZMaxChange() {
-    perspective.zMax = parseInt(document.getElementById('perspectiveZMax').value)/10.0;
+    perspective.zMax = parseInt(document.getElementById('perspectiveZMax').value);
     document.getElementById('perspectiveZMaxValueLabel').innerHTML = perspective.zMax;
 }

@@ -54,19 +54,21 @@
             <b>Projection:</b><br/>
             angle<input type="range" id="projectionAngle" oninput="onProjectionAngleChange()" min="0" max="360"
                         step="1" value="40"><span id="projectionAngleValueLabel">40</span> <br/>
-            near<input type="range" id="perspectiveZMin" oninput="onPerspectiveZMinChange()" min="0" max="100"
-                       step="1" value="1"><span id="perspectiveZMinValueLabel">1</span> <br/>
+            near<input type="range" id="perspectiveZMin" oninput="onPerspectiveZMinChange()" min="1" max="100"
+                       step="1" value="1"><span id="perspectiveZMinValueLabel">0.1</span> <br/>
             far<input type="range" id="perspectiveZMax" oninput="onPerspectiveZMaxChange()" min="0" max="100"
-                      step="1" value="2000"><span id="perspectiveZMaxValueLabel">2</span> <br/>
+                      step="1" value="100"><span id="perspectiveZMaxValueLabel">100</span> <br/>
         </div>
         <div class="ui-property-box">
             <b>Camera:</b><br/>
-            rotate x<input type="range" id="cameraRotation_x" oninput="onCameraAngleChange('x')" min="0" max="360"
-                           step="1" value="40"><span id="cameraRotationLabel_x">40</span> <br/>
-            rotate y<input type="range" id="cameraRotation_y" oninput="onCameraAngleChange('y')" min="0" max="360"
-                           step="1" value="40"><span id="cameraRotationLabel_y">40</span> <br/>
-            rotate z<input type="range" id="cameraRotation_z" oninput="onCameraAngleChange('z')" min="0" max="360"
-                           step="1" value="40"><span id="cameraRotationLabel_z">40</span> <br/>
+            rotate x<input type="range" id="cameraRotation_x" oninput="onCameraAngleChange('x')" min="0" max="360" step="1" value="0"><span id="cameraRotationLabel_x">0</span> <br/>
+            rotate y<input type="range" id="cameraRotation_y" oninput="onCameraAngleChange('y')" min="0" max="360" step="1" value="0"><span id="cameraRotationLabel_y">0</span> <br/>
+            rotate z<input type="range" id="cameraRotation_z" oninput="onCameraAngleChange('z')" min="0" max="360" step="1" value="0"><span id="cameraRotationLabel_z">0</span> <br/>
+
+            translate x<input type="range" id="cameraTranslation_x" oninput="onCameraTranslationChange('x')" min="-50"
+                              max="50" step="1" value="0"><span id="cameraTranslationLabel_x">0</span> <br/>
+            translate y<input type="range" id="cameraTranslation_y" oninput="onCameraTranslationChange('y')" min="-50" max="50" step="1" value="0"><span id="cameraTranslationLabel_y">0</span> <br/>
+            translate z<input type="range" id="cameraTranslation_z" oninput="onCameraTranslationChange('z')" min="-50" max="50" step="1" value="0"><span id="cameraTranslationLabel_z">0</span> <br/>
         </div>
     </div>
     <div style="float:right;width:75%">
