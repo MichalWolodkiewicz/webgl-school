@@ -9,7 +9,7 @@ var perspective = {
     angle: 60,
     aspect : 1,
     zMin: 0.1,
-    zMax: 2000
+    zMax: 2
 };
 
 var translation = {
@@ -189,6 +189,6 @@ function onPerspectiveZMinChange() {
 }
 
 function onPerspectiveZMaxChange() {
-    perspective.zMax = parseInt(document.getElementById('perspectiveZMax').value);
+    perspective.zMax = parseInt(document.getElementById('perspectiveZMax').value)/10.0;
     document.getElementById('perspectiveZMaxValueLabel').innerHTML = perspective.zMax;
 }
