@@ -60,6 +60,9 @@ function initWebGL() {
     initConvultionComboBox();
     try {
         GL = canvas.getContext('webgl', {antialias: true}) || canvas.getContext('web-gl-academy-context', {antialias: true});
+        var EXT = GL.getExtension("OES_element_index_uint") ||
+            GL.getExtension("MOZ_OES_element_index_uint") ||
+            GL.getExtension("WEBKIT_OES_element_index_uint");
     } catch (e) {
         console.error(e);
         return false;
@@ -78,54 +81,38 @@ function initWebGL() {
     var program = glUtils.createProgram(GL, 'shader-vs', 'shader-convultion-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
-    CUBE.createCube(GL, 2, -0.5, 0.5, 0.5, 1);
+    DRAGON.init(GL);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
     changeConvultionKernel('normal');
-    var lastUpdate = 0;
-    var updateTime = 1000 / 25;
     var now = null;
     var animate = function () {
         now = new Date().getTime();
-        if (now - lastUpdate > updateTime) {
-            lastUpdate = now;
-            GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
-            var matrix = getCubeMatrix();
-            for (var i = 0; i < CUBE.cubes.length; ++i) {
-                drawSmallCube(CUBE.cubes[i], matrix);
-            }
-            GL.flush();
-        }
-        window.requestAnimationFrame(animate);
+        GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
+        GL.activeTexture(GL.TEXTURE0);
+        GL.bindTexture(GL.TEXTURE_2D, DRAGON.texture);
+        GL.uniformMatrix4fv(shader_ptr._u_matrix, false, getModelMatrix());
+        GL.bindBuffer(GL.ARRAY_BUFFER, DRAGON.vertexBuffer);
+        GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false,4*(3+3+2),0) ;
+        GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false,4*(3+3+2),(3+3)*4) ;
+        GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, DRAGON.indicesBuffer);
+        GL.drawElements(GL.TRIANGLES, DRAGON_DATA.indices.length, GL.UNSIGNED_INT, 0);
+        GL.flush();
+        setTimeout(function () {
+            window.requestAnimationFrame(animate);
+        }, 1000 / 20);
     };
     image = new Image();
-    image.src = "img/dev.png";
+    image.src = "img/dragon_texture.png";
     image.onload = function () {
-        CUBE.setTextures(GL, image);
+        DRAGON.setTexture(GL, image);
         animate();
     }
     return true;
 }
 
-function drawSmallCube(cube, cubeMatrix) {
-    GL.bindBuffer(GL.ARRAY_BUFFER, cube.vertex_buffer);
-    GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false, 0, 0);
-
-    GL.bindBuffer(GL.ARRAY_BUFFER, cube.texture.buffer);
-    GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false, 0, 0);
-
-    GL.activeTexture(GL.TEXTURE0);
-    GL.bindTexture(GL.TEXTURE_2D, cube.texture.texture);
-    GL.uniform1i(shader_ptr._u_image, 0);
-
-    GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, cube.faces_buffer);
-    GL.uniformMatrix4fv(shader_ptr._u_matrix, false, cubeMatrix);
-    GL.uniform2f(shader_ptr._textureSize, cube.size, cube.size);
-    GL.drawElements(GL.TRIANGLES, cube.faces.length, GL.UNSIGNED_SHORT, 0);
-}
-
-function getCubeMatrix() {
+function getModelMatrix() {
     var matrix = LIBS.m4Perspective(LIBS.degToRad(perspective.angle), perspective.aspect, perspective.zMin, perspective.zMax);
     matrix = LIBS.multiply(matrix, getCameraMatrix());
     matrix = LIBS.translate(matrix, translation.x, translation.y, translation.z);
@@ -177,13 +164,6 @@ function onScaleInputChange() {
     scaleRatio = value / 100.0;
 }
 
-function onSquaresNumberInputChange() {
-    var numberOfCubes = parseInt(document.getElementById('cubeDimension').value);
-    CUBE.createCube(GL, numberOfCubes, -0.5, 0.5, 0.5, 1);
-    CUBE.setTextures(GL, image);
-    document.getElementById('cubeDimensionLabel').innerHTML = numberOfCubes;
-}
-
 function onRotationInputChange(coordinate) {
     var value = parseInt(document.getElementById('rotation_' + coordinate).value);
     rotation[coordinate] = LIBS.degToRad(value);
@@ -208,7 +188,7 @@ function onCameraAngleChange(coordinate) {
 }
 
 function onCameraTranslationChange(coordinate) {
-    var value = parseInt(document.getElementById('cameraTranslation_' + coordinate).value)/10.0;
+    var value = parseInt(document.getElementById('cameraTranslation_' + coordinate).value) / 10.0;
     if (coordinate == 'x') {
         camera.translation.x = value;
     } else if (coordinate == 'y') {

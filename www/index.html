@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <script type="text/javascript" src="model/dragon.js"></script>
+    <script type="text/javascript" src="model/dragon_object.js"></script>
     <script type="text/javascript" src="js/kernels.js"></script>
     <script type="text/javascript" src="js/libs.js"></script>
     <script type="text/javascript" src="js/glUtils.js"></script>
-    <script type="text/javascript" src="js/cube.js"></script>
     <script type="text/javascript" src="js/ui_controller.js"></script>
     <style type="text/css">
         .ui-property-box {
@@ -35,11 +36,6 @@
             <b>Scale:</b><br/>
             <input type="range" id="scaleInput" oninput="onScaleInputChange()" min="1" max="200"
                    step="1"><br/>
-        </div>
-        <div class="ui-property-box">
-            <b>Cube dimension:</b><span id="cubeDimensionLabel"></span></span><br/>
-            <input type="range" id="cubeDimension" onchange="onSquaresNumberInputChange()" min="1" max="6"
-                   step="1" value="2"><br/>
         </div>
         <div class="ui-property-box">
             <b>Rotation:</b><br/>
@@ -94,7 +90,15 @@
     void main(void) {
         gl_FragColor = texture2D(u_image, tex_coords);
     }
+</script>
 
+<script id="shader-solid-color-fs" type="x-shader/x-fragment">
+    precision mediump float;
+    varying vec2 tex_coords;
+    uniform sampler2D u_image;
+    void main(void) {
+        gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    }
 </script>
 
 <script id="shader-convultion-fs" type="x-shader/x-fragment">
