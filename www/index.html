@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>WebGL school</title>
     <script type="text/javascript" src="model/dragon.js"></script>
     <script type="text/javascript" src="model/dragon_object.js"></script>
     <script type="text/javascript" src="js/kernels.js"></script>
@@ -57,13 +57,17 @@
         </div>
         <div class="ui-property-box">
             <b>Camera:</b><br/>
-            rotate x<input type="range" id="cameraRotation_x" oninput="onCameraAngleChange('x')" min="0" max="360" step="1" value="0"><span id="cameraRotationLabel_x">0</span> <br/>
-            rotate y<input type="range" id="cameraRotation_y" oninput="onCameraAngleChange('y')" min="0" max="360" step="1" value="0"><span id="cameraRotationLabel_y">0</span> <br/>
-            rotate z<input type="range" id="cameraRotation_z" oninput="onCameraAngleChange('z')" min="0" max="360" step="1" value="0"><span id="cameraRotationLabel_z">0</span> <br/>
+            rotate x<input type="range" id="cameraRotation_x" oninput="onCameraAngleChange('x')" min="0" max="360"
+                           step="1" value="0"><span id="cameraRotationLabel_x">0</span> <br/>
+            rotate y<input type="range" id="cameraRotation_y" oninput="onCameraAngleChange('y')" min="0" max="360"
+                           step="1" value="0"><span id="cameraRotationLabel_y">0</span> <br/>
+            rotate z<input type="range" id="cameraRotation_z" oninput="onCameraAngleChange('z')" min="0" max="360"
+                           step="1" value="0"><span id="cameraRotationLabel_z">0</span> <br/>
 
             translate x<input type="range" id="cameraTranslation_x" oninput="onCameraTranslationChange('x')" min="-50"
                               max="50" step="1" value="0"><span id="cameraTranslationLabel_x">0</span> <br/>
-            translate y<input type="range" id="cameraTranslation_y" oninput="onCameraTranslationChange('y')" min="-50" max="50" step="1" value="0"><span id="cameraTranslationLabel_y">0</span> <br/>
+            translate y<input type="range" id="cameraTranslation_y" oninput="onCameraTranslationChange('y')" min="-50"
+                              max="50" step="1" value="0"><span id="cameraTranslationLabel_y">0</span> <br/>
             translate z<input type="range" id="cameraTranslation_z" oninput="onCameraTranslationChange('z')"
                               min="-50" max="50" step="1" value="2"><span id="cameraTranslationLabel_z">0</span> <br/>
         </div>
@@ -75,12 +79,19 @@
 <script id="shader-vs" type="x-shader/x-fragment">
     attribute vec3 position;
     attribute vec2 a_tex_coords;
+    attribute vec3 a_normal;
     varying vec2 tex_coords;
+    varying vec3 v_normal;
+    varying vec3 v_view;
     uniform mat4 u_matrix;
     void main(void) {
-        gl_Position = u_matrix*vec4(position, 1.);
+        gl_Position = u_matrix*vec4(position, 1.0);
+        v_normal = vec3(u_matrix*vec4(a_normal, 0.0));
+        v_view = vec3(u_matrix*vec4(position, 1.));
         tex_coords = a_tex_coords;
     }
+
+
 
 </script>
 <script id="shader-fs" type="x-shader/x-fragment">
@@ -90,6 +101,8 @@
     void main(void) {
         gl_FragColor = texture2D(u_image, tex_coords);
     }
+
+
 </script>
 
 <script id="shader-solid-color-fs" type="x-shader/x-fragment">
@@ -99,30 +112,73 @@
     void main(void) {
         gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
     }
+
+
 </script>
 
 <script id="shader-convultion-fs" type="x-shader/x-fragment">
      precision mediump float;
      varying vec2 tex_coords;
+     varying vec3 v_normal;
      uniform sampler2D u_image;
      //convultion effect variables
      uniform vec2 u_textureSize;
      uniform float u_kernel[9];
      uniform float u_kernelWeight;
+     //lighting
+     const vec3 source_ambient_color=vec3(1.,1.,1.);
+     const vec3 source_diffuse_color=vec3(1.,2.,4.);
+     const vec3 source_specular_color=vec3(1.,1.,1.);
+     const vec3 source_direction=vec3(0.,0.,1.);
+     const vec3 mat_ambient_color=vec3(0.3,0.3,0.3);
+     const vec3 mat_diffuse_color=vec3(1.,1.,1.);
+     const vec3 mat_specular_color=vec3(1.,1.,1.);
+     const float mat_shininess=10.;
      void main(void) {
          vec2 onePixel = vec2(1.0, 1.0) / u_textureSize;
          vec4 colorSum =
-         texture2D(u_image, tex_coords + onePixel * vec2(-1, -1)) * u_kernel[0] +
-         texture2D(u_image, tex_coords + onePixel * vec2( 0, -1)) * u_kernel[1] +
-         texture2D(u_image, tex_coords + onePixel * vec2( 1, -1)) * u_kernel[2] +
-         texture2D(u_image, tex_coords + onePixel * vec2(-1,  0)) * u_kernel[3] +
-         texture2D(u_image, tex_coords + onePixel * vec2( 0,  0)) * u_kernel[4] +
-         texture2D(u_image, tex_coords + onePixel * vec2( 1,  0)) * u_kernel[5] +
-         texture2D(u_image, tex_coords + onePixel * vec2(-1,  1)) * u_kernel[6] +
-         texture2D(u_image, tex_coords + onePixel * vec2( 0,  1)) * u_kernel[7] +
-         texture2D(u_image, tex_coords + onePixel * vec2( 1,  1)) * u_kernel[8] ;
-         gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, 1.0);
+            texture2D(u_image, tex_coords + onePixel * vec2(-1, -1)) * u_kernel[0] +
+            texture2D(u_image, tex_coords + onePixel * vec2( 0, -1)) * u_kernel[1] +
+            texture2D(u_image, tex_coords + onePixel * vec2( 1, -1)) * u_kernel[2] +
+            texture2D(u_image, tex_coords + onePixel * vec2(-1,  0)) * u_kernel[3] +
+            texture2D(u_image, tex_coords + onePixel * vec2( 0,  0)) * u_kernel[4] +
+            texture2D(u_image, tex_coords + onePixel * vec2( 1,  0)) * u_kernel[5] +
+            texture2D(u_image, tex_coords + onePixel * vec2(-1,  1)) * u_kernel[6] +
+            texture2D(u_image, tex_coords + onePixel * vec2( 0,  1)) * u_kernel[7] +
+            texture2D(u_image, tex_coords + onePixel * vec2( 1,  1)) * u_kernel[8] ;
+            gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, 1.0);
     }
+
+
+
+</script>
+
+<script id="shader-lighting-fs" type="x-shader/x-fragment">
+     precision mediump float;
+     varying vec2 tex_coords;
+     varying vec3 v_normal;
+     varying vec3 v_view;
+     uniform sampler2D u_image;
+     //lighting
+     const vec3 source_ambient_color=vec3(1.,1.,1.);
+     const vec3 source_diffuse_color=vec3(1.,2.,4.);
+     const vec3 source_specular_color=vec3(1.,1.,1.);
+     const vec3 source_direction=vec3(0.,0.,1.);
+     const vec3 mat_ambient_color=vec3(0.3,0.3,0.3);
+     const vec3 mat_diffuse_color=vec3(1.,1.,1.);
+     const vec3 mat_specular_color=vec3(1.,1.,1.);
+     const float mat_shininess=10.;
+     void main(void) {
+        vec3 color = vec3(texture2D(u_image, tex_coords));
+        vec3 I_ambient = source_ambient_color*mat_ambient_color;
+        vec3 I_diffuse = source_diffuse_color*mat_diffuse_color*max(0., dot(v_normal, source_direction));
+        vec3 V = normalize(v_view);
+        vec3 R = reflect(source_direction, v_normal);
+        vec3 I_specular = source_specular_color*mat_specular_color*pow(max(dot(R,V),0.), mat_shininess);
+        vec3 I = I_ambient+I_diffuse+I_specular;
+        gl_FragColor = vec4(I*color, 1.);
+     }
+
 
 </script>
 

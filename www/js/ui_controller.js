@@ -42,6 +42,7 @@ var CAMERA_MATRIX = LIBS.get_I4();
 function initShaderVariablesPointer(program) {
     shader_ptr._u_matrix = GL.getUniformLocation(program, "u_matrix");
     shader_ptr._position = GL.getAttribLocation(program, 'position');
+    shader_ptr._normal = GL.getAttribLocation(program, 'a_normal');
     shader_ptr._texCoords = GL.getAttribLocation(program, 'a_tex_coords');
     shader_ptr._u_image = GL.getUniformLocation(program, "u_image");
     shader_ptr._kernel = GL.getUniformLocation(program, "u_kernel[0]");
@@ -73,18 +74,19 @@ function initWebGL() {
     } else {
         console.log('web gl context initialized properly.');
     }
-    GL.clearColor(1.0, 0.0, 0.0, 1.0);  // Clear to red, fully opaque
+    GL.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to red, fully opaque
     GL.clearDepth(1.0);                 // Clear everything
     GL.enable(GL.DEPTH_TEST);           // Enable depth testing
     GL.depthFunc(GL.LEQUAL);
     GL.enable(GL.CULL_FACE);
-    var program = glUtils.createProgram(GL, 'shader-vs', 'shader-convultion-fs');
+    var program = glUtils.createProgram(GL, 'shader-vs', 'shader-lighting-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
     DRAGON.init(GL);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
+    GL.enableVertexAttribArray(shader_ptr._normal);
     changeConvultionKernel('normal');
     var now = null;
     var animate = function () {
@@ -94,8 +96,9 @@ function initWebGL() {
         GL.bindTexture(GL.TEXTURE_2D, DRAGON.texture);
         GL.uniformMatrix4fv(shader_ptr._u_matrix, false, getModelMatrix());
         GL.bindBuffer(GL.ARRAY_BUFFER, DRAGON.vertexBuffer);
-        GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false,4*(3+3+2),0) ;
-        GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false,4*(3+3+2),(3+3)*4) ;
+        GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false, 32, 0);
+        GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false, 32, 24);
+        GL.vertexAttribPointer(shader_ptr._normal, 3, GL.FLOAT, false, 32, 12);
         GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, DRAGON.indicesBuffer);
         GL.drawElements(GL.TRIANGLES, DRAGON_DATA.indices.length, GL.UNSIGNED_INT, 0);
         GL.flush();
