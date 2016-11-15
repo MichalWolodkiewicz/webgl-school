@@ -64,10 +64,10 @@ function initLogger() {
 }
 
 function initWebGL() {
+    initPropertiesUI();
     initLogger();
     canvas = document.getElementById('glCanvas');
     perspective.aspect = canvas.width / canvas.height;
-    initConvultionComboBox();
     try {
         GL = canvas.getContext('webgl', {antialias: true}) || canvas.getContext('web-gl-academy-context', {antialias: true});
         var EXT = GL.getExtension("OES_element_index_uint") ||
@@ -97,7 +97,6 @@ function initWebGL() {
     GL.enableVertexAttribArray(shader_ptr._position);
     GL.enableVertexAttribArray(shader_ptr._texCoords);
     GL.enableVertexAttribArray(shader_ptr._normal);
-    changeConvultionKernel('normal');
     var now = null;
     var animate = function () {
         now = new Date().getTime();
@@ -143,28 +142,6 @@ function getCameraMatrix() {
     CAMERA_MATRIX = LIBS.zRotate(CAMERA_MATRIX, camera.rotation.z);
     CAMERA_MATRIX = LIBS.translate(CAMERA_MATRIX, camera.translation.x, camera.translation.y, camera.translation.z);
     return LIBS.inverse(CAMERA_MATRIX);
-}
-
-function changeConvultionKernel(value) {
-    GL.uniform1fv(shader_ptr._kernel, kernels[value]);
-    GL.uniform1f(shader_ptr._kernelWeight, glUtils.computeKernelWeight(kernels[value]));
-}
-function initConvultionComboBox() {
-    var ui = document.getElementById("kernelFilter");
-    var select = document.createElement("select")
-    for (var name in kernels) {
-        var option = document.createElement("option");
-        option.value = name;
-        if (name == 'normal') {
-            option.selected = true;
-        }
-        option.appendChild(document.createTextNode(name));
-        select.appendChild(option);
-    }
-    select.onchange = function (event) {
-        changeConvultionKernel(this.options[this.selectedIndex].value);
-    };
-    ui.appendChild(select);
 }
 
 function onTranslationInputChange(coordinate) {
@@ -229,4 +206,15 @@ function onVectorLightingPropertyChange(coordinateIndex, propertyPrefix) {
 
 function refreshVector3LightingUniform(uniformName) {
     GL.uniform3fv(shader_ptr[uniformName], lighting[uniformName]);
+}
+
+function initPropertiesUI() {
+    $('.properties-title').each(function(order, obj) {
+        $(this).siblings().first().toggle();
+    });
+    $('.properties-title').each(function(order, obj) {
+        $(this).on('click', function() {
+            $(this).siblings().first().toggle('1000');
+        });
+    });
 }
