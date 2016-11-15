@@ -2,7 +2,7 @@ var GL;
 var logBox;
 var canvas;
 var shader_ptr = {};
-var scaleRatio = 1.0;
+var scaleRatio = 0.27;
 var image;
 
 var perspective = {
@@ -14,7 +14,7 @@ var perspective = {
 
 var translation = {
     x: 0,
-    y: 0,
+    y: -1.01,
     z: 0
 };
 
@@ -28,7 +28,7 @@ var camera = {
     translation: {
         x: 0,
         y: 0,
-        z: 2
+        z: 4.4
     },
     rotation: {
         x: 0,
@@ -38,13 +38,27 @@ var camera = {
 };
 
 var lighting = {
-    _sourceAmbientColor: [1.0, 1.0, 1.0]
+    _sourceAmbientColor: [1.0, 1.0, 1.0],
+    _sourceDiffuseColor: [1.0, 2.0, 4.0],
+    _sourceSpecularColor: [1.0, 1.0, 1.0],
+    _sourceDirection: [0.0, 0.0, 1.0],
+    _matAmbientColor: [0.3, 0.3, 0.3],
+    _matDiffuseColor: [1.0, 1.0, 1.0],
+    _matSpecularColor: [1.0, 1.0, 1.0],
+    _matShininess: 10.0
 };
 
 var CAMERA_MATRIX = LIBS.get_I4();
 
 function setAllLightingUniforms() {
     refreshVector3LightingUniform("_sourceAmbientColor");
+    refreshVector3LightingUniform("_sourceDiffuseColor");
+    refreshVector3LightingUniform("_sourceSpecularColor");
+    refreshVector3LightingUniform("_sourceDirection");
+    refreshVector3LightingUniform("_matAmbientColor");
+    refreshVector3LightingUniform("_matDiffuseColor");
+    refreshVector3LightingUniform("_matSpecularColor");
+    refreshNumberLightingUniform("_matShininess");
 }
 
 function initShaderVariablesPointer(program) {
@@ -57,6 +71,13 @@ function initShaderVariablesPointer(program) {
     shader_ptr._kernelWeight = GL.getUniformLocation(program, "u_kernelWeight");
     shader_ptr._textureSize = GL.getUniformLocation(program, "u_textureSize");
     shader_ptr._sourceAmbientColor = GL.getUniformLocation(program, "u_source_ambient_color");
+    shader_ptr._sourceDiffuseColor = GL.getUniformLocation(program, "u_source_diffuse_color");
+    shader_ptr._sourceSpecularColor = GL.getUniformLocation(program, "u_source_specular_color");
+    shader_ptr._sourceDirection = GL.getUniformLocation(program, "u_source_direction");
+    shader_ptr._matAmbientColor = GL.getUniformLocation(program, "u_mat_ambient_color");
+    shader_ptr._matDiffuseColor = GL.getUniformLocation(program, "u_mat_diffuse_color");
+    shader_ptr._matSpecularColor = GL.getUniformLocation(program, "u_mat_specular_color");
+    shader_ptr._matShininess = GL.getUniformLocation(program, "u_mat_shininess");
 }
 
 function initLogger() {
@@ -199,22 +220,57 @@ function onPerspectiveZMaxChange() {
     document.getElementById('perspectiveZMaxValueLabel').innerHTML = perspective.zMax;
 }
 
-function onVectorLightingPropertyChange(coordinateIndex, propertyPrefix) {
-    lighting[propertyPrefix][coordinateIndex] = parseFloat(document.getElementById(propertyPrefix+'_'+coordinateIndex).value)
+function onVectorLightingVectorPropertyChange(coordinateIndex, propertyPrefix) {
+    lighting[propertyPrefix][coordinateIndex] = parseFloat(document.getElementById(propertyPrefix + '_' + coordinateIndex).value)
     refreshVector3LightingUniform(propertyPrefix);
+}
+
+function onNumberLightingVectorPropertyChange(propertyPrefix) {
+    lighting[propertyPrefix] = parseFloat(document.getElementById(propertyPrefix).value)
+    refreshNumberLightingUniform(propertyPrefix);
 }
 
 function refreshVector3LightingUniform(uniformName) {
     GL.uniform3fv(shader_ptr[uniformName], lighting[uniformName]);
 }
 
+function refreshNumberLightingUniform(uniformName) {
+    GL.uniform1f(shader_ptr[uniformName], lighting[uniformName]);
+}
+
 function initPropertiesUI() {
-    $('.properties-title').each(function(order, obj) {
+    $('.properties-title').each(function (order, obj) {
         $(this).siblings().first().toggle();
     });
-    $('.properties-title').each(function(order, obj) {
-        $(this).on('click', function() {
+    $('.properties-title').each(function (order, obj) {
+        $(this).on('click', function () {
             $(this).siblings().first().toggle('1000');
         });
     });
+    initLightingUI();
+}
+
+function initLightingUI() {
+    addLightingVectorPropertyUI('source ambient color', '_sourceAmbientColor');
+    addLightingVectorPropertyUI('source diffuse color', '_sourceDiffuseColor');
+    addLightingVectorPropertyUI('source specular color', '_sourceSpecularColor');
+    addLightingVectorPropertyUI('source direction', '_sourceDirection');
+    addLightingVectorPropertyUI('material ambient color', '_matAmbientColor');
+    addLightingVectorPropertyUI('material diffuse color', '_matDiffuseColor');
+    addLightingVectorPropertyUI('material specular color', '_matSpecularColor');
+    addLightingNumberPropertyUI('material shininess', '_matShininess');
+}
+
+function addLightingVectorPropertyUI(label, propertyName) {
+    var html = label + '<br/>';
+    html += '<input type="number" id="' + propertyName + '_0" onchange="onVectorLightingVectorPropertyChange(0,&quot;' + propertyName + '&quot;)" value="' + lighting[propertyName][0] + '" step="0.1"/>';
+    html += '<input type="number" id="' + propertyName + '_1" onchange="onVectorLightingVectorPropertyChange(1,&quot;' + propertyName + '&quot;)" value="' + lighting[propertyName][1] + '" step="0.1"/>';
+    html += '<input type="number" id="' + propertyName + '_2" onchange="onVectorLightingVectorPropertyChange(2,&quot;' + propertyName + '&quot;)" value="' + lighting[propertyName][2] + '" step="0.1"/>';
+    $('#lighting-box-properties').append(html);
+}
+
+function addLightingNumberPropertyUI(label, propertyName) {
+    var html = label + '<br/>';
+    html += '<input type="number" id="' + propertyName + '" onchange="onNumberLightingVectorPropertyChange(&quot;' + propertyName + '&quot;)" value="' + lighting[propertyName] + '" step="0.1"/>';
+    $('#lighting-box-properties').append(html);
 }
