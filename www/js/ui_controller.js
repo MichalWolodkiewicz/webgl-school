@@ -37,7 +37,15 @@ var camera = {
     }
 };
 
+var lighting = {
+    _sourceAmbientColor: [1.0, 1.0, 1.0]
+};
+
 var CAMERA_MATRIX = LIBS.get_I4();
+
+function setAllLightingUniforms() {
+    refreshVector3LightingUniform("_sourceAmbientColor");
+}
 
 function initShaderVariablesPointer(program) {
     shader_ptr._u_matrix = GL.getUniformLocation(program, "u_matrix");
@@ -48,6 +56,7 @@ function initShaderVariablesPointer(program) {
     shader_ptr._kernel = GL.getUniformLocation(program, "u_kernel[0]");
     shader_ptr._kernelWeight = GL.getUniformLocation(program, "u_kernelWeight");
     shader_ptr._textureSize = GL.getUniformLocation(program, "u_textureSize");
+    shader_ptr._sourceAmbientColor = GL.getUniformLocation(program, "u_source_ambient_color");
 }
 
 function initLogger() {
@@ -82,6 +91,7 @@ function initWebGL() {
     var program = glUtils.createProgram(GL, 'shader-vs', 'shader-lighting-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
+    setAllLightingUniforms();
     DRAGON.init(GL);
     GL.viewport(0.0, 0.0, canvas.width, canvas.height);
     GL.enableVertexAttribArray(shader_ptr._position);
@@ -210,4 +220,13 @@ function onPerspectiveZMinChange() {
 function onPerspectiveZMaxChange() {
     perspective.zMax = parseInt(document.getElementById('perspectiveZMax').value);
     document.getElementById('perspectiveZMaxValueLabel').innerHTML = perspective.zMax;
+}
+
+function onVectorLightingPropertyChange(coordinateIndex, propertyPrefix) {
+    lighting[propertyPrefix][coordinateIndex] = parseFloat(document.getElementById(propertyPrefix+'_'+coordinateIndex).value)
+    refreshVector3LightingUniform(propertyPrefix);
+}
+
+function refreshVector3LightingUniform(uniformName) {
+    GL.uniform3fv(shader_ptr[uniformName], lighting[uniformName]);
 }

@@ -19,7 +19,7 @@
 </head>
 <body onload="initWebGL(); initLogger();" style="text-align: center;">
 <div>
-    <div style="float:left;width:25%" id="ui">
+    <div style="float:left;width:35%" id="ui">
         <div class="ui-property-box">
             <b>Translation:</b><br/>
             X<input type="range" id="translation_x" oninput="onTranslationInputChange('x')" min="-150" max="150"
@@ -71,8 +71,26 @@
             translate z<input type="range" id="cameraTranslation_z" oninput="onCameraTranslationChange('z')"
                               min="-50" max="50" step="1" value="2"><span id="cameraTranslationLabel_z">0</span> <br/>
         </div>
+        <div class="ui-property-box">
+            <b>Lighting:</b><br/>
+            source ambient color<br/>
+            <input type="number" id="_sourceAmbientColor_0" onchange="onVectorLightingPropertyChange(0,
+            '_sourceAmbientColor')"/>
+            <input type="number" id="_sourceAmbientColor_1" onchange="onVectorLightingPropertyChange(1,
+            '_sourceAmbientColor')"/>
+            <input type="number" id="_sourceAmbientColor_2" onchange="onVectorLightingPropertyChange(2,
+            '_sourceAmbientColor')"/>
+            <br/>
+            <!--const vec3 source_diffuse_color=vec3(1.,2.,4.);
+            const vec3 source_specular_color=vec3(1.,1.,1.);
+            const vec3 source_direction=vec3(0.,0.,1.);
+            const vec3 mat_ambient_color=vec3(0.3,0.3,0.3);
+            const vec3 mat_diffuse_color=vec3(1.,1.,1.);
+            const vec3 mat_specular_color=vec3(1.,1.,1.);
+            const float mat_shininess=10.;-->
+        </div>
     </div>
-    <div style="float:right;width:75%">
+    <div style="float:right;width:65%">
         <canvas width="600px" height="600px" id="glCanvas"></canvas>
     </div>
 </div>
@@ -90,9 +108,6 @@
         v_view = vec3(u_matrix*vec4(position, 1.));
         tex_coords = a_tex_coords;
     }
-
-
-
 </script>
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
@@ -101,8 +116,6 @@
     void main(void) {
         gl_FragColor = texture2D(u_image, tex_coords);
     }
-
-
 </script>
 
 <script id="shader-solid-color-fs" type="x-shader/x-fragment">
@@ -112,8 +125,6 @@
     void main(void) {
         gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
     }
-
-
 </script>
 
 <script id="shader-convultion-fs" type="x-shader/x-fragment">
@@ -125,15 +136,6 @@
      uniform vec2 u_textureSize;
      uniform float u_kernel[9];
      uniform float u_kernelWeight;
-     //lighting
-     const vec3 source_ambient_color=vec3(1.,1.,1.);
-     const vec3 source_diffuse_color=vec3(1.,2.,4.);
-     const vec3 source_specular_color=vec3(1.,1.,1.);
-     const vec3 source_direction=vec3(0.,0.,1.);
-     const vec3 mat_ambient_color=vec3(0.3,0.3,0.3);
-     const vec3 mat_diffuse_color=vec3(1.,1.,1.);
-     const vec3 mat_specular_color=vec3(1.,1.,1.);
-     const float mat_shininess=10.;
      void main(void) {
          vec2 onePixel = vec2(1.0, 1.0) / u_textureSize;
          vec4 colorSum =
@@ -148,9 +150,6 @@
             texture2D(u_image, tex_coords + onePixel * vec2( 1,  1)) * u_kernel[8] ;
             gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, 1.0);
     }
-
-
-
 </script>
 
 <script id="shader-lighting-fs" type="x-shader/x-fragment">
@@ -160,7 +159,7 @@
      varying vec3 v_view;
      uniform sampler2D u_image;
      //lighting
-     const vec3 source_ambient_color=vec3(1.,1.,1.);
+     uniform vec3 u_source_ambient_color;
      const vec3 source_diffuse_color=vec3(1.,2.,4.);
      const vec3 source_specular_color=vec3(1.,1.,1.);
      const vec3 source_direction=vec3(0.,0.,1.);
@@ -170,7 +169,7 @@
      const float mat_shininess=10.;
      void main(void) {
         vec3 color = vec3(texture2D(u_image, tex_coords));
-        vec3 I_ambient = source_ambient_color*mat_ambient_color;
+        vec3 I_ambient = u_source_ambient_color*mat_ambient_color;
         vec3 I_diffuse = source_diffuse_color*mat_diffuse_color*max(0., dot(v_normal, source_direction));
         vec3 V = normalize(v_view);
         vec3 R = reflect(source_direction, v_normal);
@@ -178,8 +177,6 @@
         vec3 I = I_ambient+I_diffuse+I_specular;
         gl_FragColor = vec4(I*color, 1.);
      }
-
-
 </script>
 
 </body>
