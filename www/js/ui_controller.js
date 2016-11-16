@@ -41,7 +41,7 @@ var lighting = {
     _sourceAmbientColor: [1.0, 1.0, 1.0],
     _sourceDiffuseColor: [1.0, 2.0, 4.0],
     _sourceSpecularColor: [1.0, 1.0, 1.0],
-    _sourceDirection: [0.0, 0.0, 1.0],
+    _sourceDirection: [0.0, 0.0, -1.0],
     _matAmbientColor: [0.3, 0.3, 0.3],
     _matDiffuseColor: [1.0, 1.0, 1.0],
     _matSpecularColor: [1.0, 1.0, 1.0],
@@ -109,7 +109,7 @@ function initWebGL() {
     GL.enable(GL.DEPTH_TEST);           // Enable depth testing
     GL.depthFunc(GL.LEQUAL);
     GL.enable(GL.CULL_FACE);
-    var program = glUtils.createProgram(GL, 'shader-vs', 'shader-lighting-fs');
+    var program = glUtils.createProgram(GL, 'shader-vs', 'shader-lighting-directional-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
     setAllLightingUniforms();

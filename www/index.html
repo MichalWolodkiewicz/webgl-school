@@ -95,7 +95,7 @@
     void main(void) {
         gl_Position = u_matrix*vec4(position, 1.0);
         v_normal = vec3(u_matrix*vec4(a_normal, 0.0));
-        v_view = vec3(u_matrix*vec4(position, 1.));
+        v_view = vec3(gl_Position);
         tex_coords = a_tex_coords;
     }
 
@@ -174,6 +174,30 @@
         vec3 I_specular = u_source_specular_color*u_mat_specular_color*pow(max(dot(R,V),0.), u_mat_shininess);
         vec3 I = I_ambient+I_diffuse+I_specular;
         gl_FragColor = vec4(I*color, 1.);
+     }
+</script>
+
+<script id="shader-lighting-directional-fs" type="x-shader/x-fragment">
+     precision mediump float;
+     varying vec2 tex_coords;
+     varying vec3 v_normal;
+     varying vec3 v_view;
+     uniform sampler2D u_image;
+     //lighting
+     uniform vec3 u_source_ambient_color;
+     uniform vec3 u_source_diffuse_color;
+     uniform vec3 u_source_specular_color;
+     uniform vec3 u_source_direction;
+     uniform vec3 u_mat_ambient_color;
+     uniform vec3 u_mat_diffuse_color;
+     uniform vec3 u_mat_specular_color;
+     uniform float u_mat_shininess;
+     void main(void) {
+           vec3 normal = normalize(v_normal);
+           vec3 lightDirection = normalize(u_source_direction);
+           float lightDotProduct = dot(normal, lightDirection);
+           gl_FragColor = vec4(u_source_ambient_color, 1.0);
+           gl_FragColor.rgb *= lightDotProduct;
      }
 </script>
 
