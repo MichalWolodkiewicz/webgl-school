@@ -98,9 +98,8 @@
         v_view = vec3(gl_Position);
         tex_coords = a_tex_coords;
     }
-
-
 </script>
+
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
     varying vec2 tex_coords;
@@ -108,8 +107,6 @@
     void main(void) {
         gl_FragColor = texture2D(u_image, tex_coords);
     }
-
-
 </script>
 
 <script id="shader-solid-color-fs" type="x-shader/x-fragment">
@@ -119,8 +116,6 @@
     void main(void) {
         gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
     }
-
-
 </script>
 
 <script id="shader-convultion-fs" type="x-shader/x-fragment">
@@ -198,6 +193,54 @@
            float lightDotProduct = dot(normal, lightDirection);
            gl_FragColor = vec4(u_source_ambient_color, 1.0);
            gl_FragColor.rgb *= lightDotProduct;
+     }
+</script>
+
+<script id="shader-lighting-point-vs" type="x-shader/x-fragment">
+    attribute vec3 position;
+    attribute vec2 a_tex_coords;
+    attribute vec3 a_normal;
+    varying vec2 tex_coords;
+    varying vec3 v_normal;
+    varying vec3 v_view;
+    uniform mat4 u_matrix;
+    //lighting
+    varying vec3 v_surfaceToLight;
+    uniform vec3 u_lightWorldPosition;
+    uniform mat4 u_world;
+    uniform mat4 u_worldInverse;
+    void main(void) {
+        gl_Position = u_matrix*vec4(position, 1.0);
+        v_normal = vec3(u_worldInverse*vec4(a_normal, 0.0));
+        v_view = vec3(gl_Position);
+        tex_coords = a_tex_coords;
+        vec3 surfaceWorldPosition = (u_world*vec4(position, 1.0)).xyz;
+        v_surfaceToLight = u_lightWorldPosition - surfaceWorldPosition;
+    }
+</script>
+
+<script id="shader-lighting-point-fs" type="x-shader/x-fragment">
+     precision mediump float;
+     varying vec2 tex_coords;
+     varying vec3 v_normal;
+     varying vec3 v_view;
+     uniform sampler2D u_image;
+     //lighting
+     uniform vec3 u_source_ambient_color;
+     uniform vec3 u_source_diffuse_color;
+     uniform vec3 u_source_specular_color;
+     uniform vec3 u_source_direction;
+     uniform vec3 u_mat_ambient_color;
+     uniform vec3 u_mat_diffuse_color;
+     uniform vec3 u_mat_specular_color;
+     uniform float u_mat_shininess;
+     varying vec3 v_surfaceToLight;
+     void main(void) {
+           vec3 normal = normalize(v_normal);
+           vec3 surfaceToLightDirection = normalize(v_surfaceToLight);
+           float light = dot(normal, surfaceToLightDirection);
+           gl_FragColor = vec4(u_source_ambient_color, 1.0);
+           gl_FragColor.rgb *= light;
      }
 </script>
 

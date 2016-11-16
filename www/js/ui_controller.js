@@ -4,6 +4,7 @@ var canvas;
 var shader_ptr = {};
 var scaleRatio = 0.27;
 var image;
+var program;
 
 var perspective = {
     angle: 60,
@@ -45,6 +46,7 @@ var lighting = {
     _matAmbientColor: [0.3, 0.3, 0.3],
     _matDiffuseColor: [1.0, 1.0, 1.0],
     _matSpecularColor: [1.0, 1.0, 1.0],
+    _lightWorldPosition: [0.0, 0.0, 0.0],
     _matShininess: 10.0
 };
 
@@ -59,10 +61,13 @@ function setAllLightingUniforms() {
     refreshVector3LightingUniform("_matDiffuseColor");
     refreshVector3LightingUniform("_matSpecularColor");
     refreshNumberLightingUniform("_matShininess");
+    refreshNumberLightingUniform("_lightWorldPosition");
 }
 
 function initShaderVariablesPointer(program) {
     shader_ptr._u_matrix = GL.getUniformLocation(program, "u_matrix");
+    shader_ptr._u_world = GL.getUniformLocation(program, "u_world");
+    shader_ptr._u_worldInverse = GL.getUniformLocation(program, "u_worldInverse");
     shader_ptr._position = GL.getAttribLocation(program, 'position');
     shader_ptr._normal = GL.getAttribLocation(program, 'a_normal');
     shader_ptr._texCoords = GL.getAttribLocation(program, 'a_tex_coords');
@@ -78,6 +83,7 @@ function initShaderVariablesPointer(program) {
     shader_ptr._matDiffuseColor = GL.getUniformLocation(program, "u_mat_diffuse_color");
     shader_ptr._matSpecularColor = GL.getUniformLocation(program, "u_mat_specular_color");
     shader_ptr._matShininess = GL.getUniformLocation(program, "u_mat_shininess");
+    shader_ptr._lightWorldPosition = GL.getUniformLocation(program, "u_lightWorldPosition");
 }
 
 function initLogger() {
@@ -109,7 +115,7 @@ function initWebGL() {
     GL.enable(GL.DEPTH_TEST);           // Enable depth testing
     GL.depthFunc(GL.LEQUAL);
     GL.enable(GL.CULL_FACE);
-    var program = glUtils.createProgram(GL, 'shader-vs', 'shader-lighting-directional-fs');
+    program = glUtils.createProgram(GL, 'shader-lighting-point-vs', 'shader-lighting-point-fs');
     GL.useProgram(program);
     initShaderVariablesPointer(program);
     setAllLightingUniforms();
@@ -124,7 +130,12 @@ function initWebGL() {
         GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
         GL.activeTexture(GL.TEXTURE0);
         GL.bindTexture(GL.TEXTURE_2D, DRAGON.texture);
-        GL.uniformMatrix4fv(shader_ptr._u_matrix, false, getModelMatrix());
+        var worldMatrix = getWorldMatrix();
+        var worldInverseMatrix = LIBS.inverse(worldMatrix);
+        var projectionMatrix = getProjectionMatrix(worldMatrix);
+        GL.uniformMatrix4fv(shader_ptr._u_matrix, false, projectionMatrix);
+        GL.uniformMatrix4fv(shader_ptr._u_world, false, worldMatrix);
+        GL.uniformMatrix4fv(shader_ptr._u_worldInverse, false, worldInverseMatrix);
         GL.bindBuffer(GL.ARRAY_BUFFER, DRAGON.vertexBuffer);
         GL.vertexAttribPointer(shader_ptr._position, 3, GL.FLOAT, false, 32, 0);
         GL.vertexAttribPointer(shader_ptr._texCoords, 2, GL.FLOAT, false, 32, 24);
@@ -132,6 +143,7 @@ function initWebGL() {
         GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, DRAGON.indicesBuffer);
         GL.drawElements(GL.TRIANGLES, DRAGON_DATA.indices.length, GL.UNSIGNED_INT, 0);
         GL.flush();
+        console.log(GL.getUniform(program, shader_ptr._lightWorldPosition));
         setTimeout(function () {
             window.requestAnimationFrame(animate);
         }, 1000 / 20);
@@ -145,18 +157,20 @@ function initWebGL() {
     return true;
 }
 
-function getModelMatrix() {
+function getWorldMatrix() {
+    var worldMatrix = LIBS.translate(LIBS.get_I4(), translation.x, translation.y, translation.z);
+    worldMatrix = LIBS.xRotate(worldMatrix, rotation.x);
+    worldMatrix = LIBS.yRotate(worldMatrix, rotation.y);
+    worldMatrix = LIBS.zRotate(worldMatrix, rotation.z);
+    return LIBS.scale(worldMatrix, scaleRatio, scaleRatio, scaleRatio);
+}
+function getProjectionMatrix(worldMatrix) {
     var matrix = LIBS.m4Perspective(LIBS.degToRad(perspective.angle), perspective.aspect, perspective.zMin, perspective.zMax);
-    matrix = LIBS.multiply(matrix, getCameraMatrix());
-    matrix = LIBS.translate(matrix, translation.x, translation.y, translation.z);
-    matrix = LIBS.xRotate(matrix, rotation.x);
-    matrix = LIBS.yRotate(matrix, rotation.y);
-    matrix = LIBS.zRotate(matrix, rotation.z);
-    matrix = LIBS.scale(matrix, scaleRatio, scaleRatio, scaleRatio);
-    return matrix;
+    matrix = LIBS.multiply(matrix, getViewMatrix());
+    return LIBS.multiply(matrix, worldMatrix);
 }
 
-function getCameraMatrix() {
+function getViewMatrix() {
     LIBS.set_I4(CAMERA_MATRIX);
     CAMERA_MATRIX = LIBS.xRotate(CAMERA_MATRIX, camera.rotation.x);
     CAMERA_MATRIX = LIBS.yRotate(CAMERA_MATRIX, camera.rotation.y);
@@ -258,6 +272,7 @@ function initLightingUI() {
     addLightingVectorPropertyUI('material ambient color', '_matAmbientColor');
     addLightingVectorPropertyUI('material diffuse color', '_matDiffuseColor');
     addLightingVectorPropertyUI('material specular color', '_matSpecularColor');
+    addLightingVectorPropertyUI('light point position', '_lightWorldPosition');
     addLightingNumberPropertyUI('material shininess', '_matShininess');
 }
 
@@ -265,7 +280,8 @@ function addLightingVectorPropertyUI(label, propertyName) {
     var html = label + '<br/>';
     html += '<input type="number" id="' + propertyName + '_0" onchange="onVectorLightingVectorPropertyChange(0,&quot;' + propertyName + '&quot;)" value="' + lighting[propertyName][0] + '" step="0.1"/>';
     html += '<input type="number" id="' + propertyName + '_1" onchange="onVectorLightingVectorPropertyChange(1,&quot;' + propertyName + '&quot;)" value="' + lighting[propertyName][1] + '" step="0.1"/>';
-    html += '<input type="number" id="' + propertyName + '_2" onchange="onVectorLightingVectorPropertyChange(2,&quot;' + propertyName + '&quot;)" value="' + lighting[propertyName][2] + '" step="0.1"/>';
+    html += '<input type="number" id="' + propertyName + '_2"' +
+        ' onchange="onVectorLightingVectorPropertyChange(2,&quot;' + propertyName + '&quot;)" value="' + lighting[propertyName][2] + '" step="0.1"/><br/>';
     $('#lighting-box-properties').append(html);
 }
 
